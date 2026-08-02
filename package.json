@@ -1,0 +1,11 @@
+{
+  "name": "lvce",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check app.js && find functions lib scripts -name '*.js' -o -name '*.mjs' | xargs -n1 node --check",
+    "hash-password": "node scripts/hash-password.mjs"
+  },
+  "devDependencies": {"wrangler": "^4.30.0"}
+}

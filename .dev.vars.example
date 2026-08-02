@@ -1,0 +1,4 @@
+# 用 `npm run hash-password -- "家庭口令"` 生成；不要提交真实值
+FAMILY_PASSWORD_HASH="pbkdf2-sha256$310000$SALT$HASH"
+# 用 `openssl rand -base64 48` 生成；不要提交真实值
+SESSION_SECRET="replace-with-a-long-random-secret"

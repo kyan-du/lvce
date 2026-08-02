@@ -1,0 +1,8 @@
+name = "lvce"
+compatibility_date = "2026-08-01"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lvce"
+database_id = "e77ceb5a-f5ec-4645-9c08-0f2215b39a87"
