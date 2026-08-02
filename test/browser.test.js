@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile,mkdir} from 'node:fs/promises';
+import {join,extname} from 'node:path';
+import {existsSync} from 'node:fs';
+import {chromium} from 'playwright-core';
+import {PDFDocument} from 'pdf-lib';
+
+const root=new URL('..',import.meta.url).pathname;
+const localBrowser=join(process.env.HOME,'Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell');
+const browserPath=process.env.PLAYWRIGHT_CHROMIUM_PATH||(existsSync(localBrowser)?localBrowser:chromium.executablePath());
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css'};
+let server,browser,base;
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[new Date().toLocaleDateString('en-CA'),'09:00','今日活动','地点','联系人','备注']],transport:[['铁路','G123','2026-08-03','甲地','09:00','乙地','10:00','ABC']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','CONF','1','¥1']],emergency:[['家人','139 0000 0000','']],tour:[]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[]}]};
+test.before(async()=>{await mkdir(join(root,'docs/evidence'),{recursive:true});server=createServer(async(req,res)=>{if(req.url==='/api/trips'){res.setHeader('content-type','application/json');if(req.method==='GET')res.end(JSON.stringify({version:1,data:document}));else res.end(JSON.stringify({version:2})) ;return}let p=req.url==='/'?'index.html':req.url.slice(1);try{let data=await readFile(join(root,p));res.setHeader('content-type',mime[extname(p)]||'application/octet-stream');res.end(data)}catch{res.statusCode=404;res.end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${server.address().port}`;browser=await chromium.launch({executablePath:browserPath,headless:true})});
+test.after(async()=>{await browser?.close();await new Promise(r=>server.close(r))});
+
+test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{for(const [name,viewport] of [['desktop',{width:1440,height:1000}],['mobile',{width:390,height:844}]]){let context=await browser.newContext({viewport});await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:base});let page=await context.newPage();await page.goto(base);await page.waitForSelector('tr.today');assert.equal(await page.locator('tr.today').count(),1);await page.getByRole('button',{name:'预订与联系人'}).click();let copy=page.getByRole('button',{name:'复制航班/车次'});await copy.click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'G123');await page.getByText('已复制到剪贴板').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,`${name} has page-level horizontal overflow`);await page.screenshot({path:join(root,`docs/evidence/ux-${name}.png`),fullPage:true});await context.close()}
+let page=await browser.newPage();await page.goto(base);await page.getByRole('button',{name:/可删除旅行/}).click();await page.getByRole('button',{name:'删除旅行',exact:true}).click();await page.getByText('此操作无法撤销').waitFor();await page.getByRole('button',{name:'永久删除'}).click();await page.getByText('旅行已删除').waitFor();assert.equal(await page.getByRole('button',{name:/可删除旅行/}).count(),0);page.once('dialog',d=>{assert.match(d.message(),/唯一一份旅行/);d.accept()});await page.getByRole('button',{name:'删除旅行',exact:true}).click()});
+
+test('A4 landscape print PDF stays within printable page',async()=>{let page=await browser.newPage({viewport:{width:1440,height:1000}});await page.goto(base);for(const tab of ['行程','预订与联系人','装箱清单']){await page.getByRole('button',{name:tab,exact:true}).click();let file=join(root,`docs/evidence/print-${tab}.pdf`);await page.pdf({path:file,format:'A4',landscape:true,printBackground:true,preferCSSPageSize:true});let pdf=await PDFDocument.load(await readFile(file));assert.ok(pdf.getPageCount()>=1);for(const p of pdf.getPages()){let {width,height}=p.getSize();assert.ok(width>height);assert.ok(Math.abs(width-841.89)<3&&Math.abs(height-595.28)<3)}}});
