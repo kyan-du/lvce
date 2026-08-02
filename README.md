@@ -5,9 +5,9 @@
 ## 安全与数据
 
 - 全站（除登录页/登录接口）要求登录；API 未登录返回 `401`
-- 会话为 HMAC 签名、30 天有效的 `HttpOnly; Secure; SameSite=Strict` Cookie
+- 会话为 HMAC 签名、30 天有效的 `HttpOnly; Secure; SameSite=Strict` Cookie；会话 ID 同时存入 D1，退出时删除，因此旧 Cookie 重放会立即失效
 - 家庭口令仅以 PBKDF2-SHA256 派生值配置，不写入仓库
-- D1 使用单行 `trips` JSON 文档；服务端验证基本结构、最多 50 个旅行、最大 256 KiB
+- D1 使用单行 `trips` JSON 文档；服务端验证基本结构、最多 50 个旅行、最大 256 KiB，并以版本号和 `If-Match` 防止多设备静默覆盖
 - 页面首次从云端读取。云端为空时读取 `lvce-v1` localStorage；没有本机数据时上传内置 seed。不迁移或兼容任何旧键。编辑后先存本机，再 700ms debounce 同步云端
 
 ## 本地开发
@@ -35,6 +35,10 @@ npx wrangler pages dev . --d1 DB=lvce
    - `SESSION_SECRET`：至少 32 字节的密码学随机字符串（例如 `openssl rand -base64 48`）
 6. GitHub 仓库 Actions secrets 配置 `CLOUDFLARE_API_TOKEN` 与 `CLOUDFLARE_ACCOUNT_ID`。Token 需有 Pages 编辑权限；远程初始化 D1 的操作者另需 D1 编辑权限。
 7. 推送 `main` 或手动运行 Actions。工作流先测试、语法检查，再执行 Pages 部署。
+
+## D1 备份与恢复
+
+变更 schema 前先运行 `npx wrangler d1 export lvce --remote --output backups/lvce-YYYY-MM-DD.sql`，将备份保存在受保护的位置，不提交仓库。恢复时先确认目标数据库，再运行 `npx wrangler d1 execute lvce --remote --file backups/lvce-YYYY-MM-DD.sql`。日常 JSON 数据也可从页面导出；导入会严格检查大小和结构，并在替换当前数据前二次确认。
 
 仓库不包含实际口令、派生值、session secret 或 Cloudflare 凭据。
 

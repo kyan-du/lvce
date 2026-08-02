@@ -1,1 +1,2 @@
-export function onRequestPost(){return new Response(null,{status:204,headers:{'Set-Cookie':'lvce_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0','Cache-Control':'no-store'}})}
+import {cookie,readSession} from '../../../lib/auth.js';
+export async function onRequestPost({request,env}){const session=await readSession(cookie(request,'lvce_session'),env.SESSION_SECRET);if(session)await env.DB.prepare('DELETE FROM sessions WHERE id = ?').bind(session.sid).run();return new Response(null,{status:204,headers:{'Set-Cookie':'lvce_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0','Cache-Control':'no-store'}})}
