@@ -107,7 +107,6 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   .aside-title{margin:0 0 7px}
   .aside-title>b{display:none}
   .trip-actions{margin-left:auto}
-  #newTrip{padding:6px 10px}
   nav{position:relative;padding:0;display:block;overflow:visible}
   nav button{display:none}
   nav button.active{display:block;width:100%;min-width:0;padding:8px 44px 8px 10px;margin:0;box-shadow:none;background:#fff;border:1px solid var(--line)}
@@ -163,8 +162,6 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   nav button.active::after{right:11px}
   .trip-date{font-size:11px}
   .trip-actions{display:flex;gap:6px;align-items:stretch}
-  #newTrip{width:42px;padding:0;font-size:20px;border-radius:9px}
-  #newTrip span{display:none}
   .trip-actions .menu summary{height:52px;min-width:42px;border:0;background:#fff}
   .account-bar{display:none}
   .account-bar.important{display:block;margin-top:5px}
