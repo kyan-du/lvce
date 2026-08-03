@@ -76,7 +76,8 @@ body:not(.editing) .itinerary-block .section-title{display:none}.itinerary-block
 }
 
 /* Global account action belongs in the page header. */
-header #logout{align-self:flex-start;border:1px solid #ffffff55;background:#ffffff12;color:#fff;padding:6px 10px;font-size:12px}
+header #logout{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:1px solid #ffffff55;background:#ffffff12;color:#fff;padding:6px 10px;font-size:12px}
+header #logout .logout-icon{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 header #logout:hover{border-color:#fff;background:#ffffff20}
 .account-bar{width:184px}
 @media(max-width:680px){header{position:relative;padding-right:88px}header #logout{position:absolute;right:14px;top:16px}.account-bar{width:auto}.account-bar>span{font-size:11px}}
