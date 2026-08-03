@@ -158,14 +158,14 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   aside{padding:10px 14px;border-bottom:0;overflow:visible}
   .aside-title{display:none}
   nav button.active::after{content:none}
-  .trip-switcher{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch;overflow:visible}
+  .trip-switcher{position:relative;display:block;overflow:visible}
   .trip-actions,.trip-actions .menu{overflow:visible}
   .trip-actions .menu-panel{z-index:50}
-  nav button.active{height:52px;padding:6px 35px 6px 10px;border:0;border-radius:9px;background:#fff}
+  nav button.active{min-height:64px;height:auto;padding:10px 58px 10px 12px;border:0;border-radius:9px;background:#fff}
   nav button.active::after{right:11px}
-  .trip-date{font-size:11px}
-  .trip-actions{display:flex;gap:6px;align-items:stretch}
-  .trip-actions .menu summary{height:52px;min-width:42px;border:0;background:#fff}
+  .trip-date{font-size:11px;word-break:keep-all;overflow-wrap:normal}
+  .trip-actions{position:absolute;z-index:2;right:7px;top:7px;display:flex;gap:6px;align-items:stretch}
+  .trip-actions .menu summary{height:40px;min-width:40px;border:1px solid var(--line);background:#fff}
   .account-bar{display:none}
   .account-bar.important{display:block;margin-top:5px}
   .workspace{padding:0 14px 38px}
