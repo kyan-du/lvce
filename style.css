@@ -140,3 +140,58 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   body[data-tab="packing"] .toolbar .progress{grid-column:1/-1;grid-row:2}
   .tabs{margin-top:0}
 }
+
+/* Mobile v2: purpose-built hierarchy instead of stacking the desktop shell. */
+.mobile-label,.module-bar{display:none}
+@media(max-width:680px){
+  header{min-height:72px;height:72px;padding:13px 16px;flex-wrap:nowrap}
+  header>div{display:block}
+  header .eyebrow,header #subtitle{display:none}
+  header h1{font-size:27px;line-height:1;letter-spacing:.12em}
+  header #logout{top:18px;right:15px;border:0;background:transparent;padding:5px;color:#e8f0ed;font-size:12px}
+  main{min-height:calc(100vh - 72px)}
+  aside{padding:10px 14px;border-bottom:1px solid var(--line)}
+  .aside-title{display:none}
+  .trip-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch}
+  nav button.active{height:52px;padding:6px 35px 6px 10px;border:0;border-radius:9px;background:#fff}
+  nav button.active::after{right:11px}
+  .trip-date{font-size:11px}
+  .trip-actions{display:flex;gap:6px;align-items:stretch}
+  #newTrip{width:42px;padding:0;font-size:20px;border-radius:9px}
+  #newTrip span{display:none}
+  .trip-actions .menu summary{height:52px;min-width:42px;border:0;background:#fff}
+  .account-bar{display:none}
+  .account-bar.important{display:block;margin-top:5px}
+  .workspace{padding:0 14px 38px}
+  .desktop-toolbar{display:none}
+  .tabs{order:0;margin:0 0 12px;border-bottom:1px solid var(--line)}
+  .tabs button{padding:11px 8px 9px;min-width:0}
+  .desktop-label{display:none}.mobile-label{display:inline}
+  .module-bar{display:flex;align-items:center;justify-content:space-between;margin:0 0 9px}
+  .module-bar strong{font:700 18px Georgia,"Songti SC",serif}
+  .module-bar button{border:0;background:transparent;color:var(--green);padding:4px 2px}
+  .progress{display:none;margin:0 0 14px}
+  body[data-tab="packing"] .progress{display:block}
+  .table-block>.section-title{display:none}
+  .privacy-note{margin-bottom:12px}
+  .categories{gap:12px}
+  .card{border-radius:10px;overflow:hidden}
+  .card-head{height:39px;display:flex;background:#edf2ef;border-bottom:1px solid var(--line)}
+  .category-name{flex:1;padding:0 11px}
+  .category-icon{display:none}
+  .column-head{display:none}
+  .item{display:grid;grid-template-columns:27px minmax(0,1fr) auto;gap:4px;min-height:46px;padding:0 11px;align-items:center}
+  .item>*{padding:0}
+  .mobile-check{display:block;grid-column:1}
+  .mobile-check input{width:20px;height:20px;accent-color:var(--green)}
+  .item>input[type=text]{grid-column:2;font-size:15px}
+  .item>input[type=number],.check-cell{display:none}
+  .item-qty{display:block;grid-column:3;color:var(--muted);font-variant-numeric:tabular-nums}
+  .editing .item{grid-template-columns:minmax(0,1fr) 65px 68px}
+  .editing .mobile-check,.editing .item-qty{display:none}
+  .editing .item>input[type=text]{grid-column:1}
+  .editing .item>input[type=number]{display:block;grid-column:2;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:center}
+  .editing .check-cell{display:flex;grid-column:3;align-items:center;justify-content:flex-end;gap:5px}
+  .editing .check-cell input{width:20px;height:20px}
+  .editing .remove-item{display:block}
+}
