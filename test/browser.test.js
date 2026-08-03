@@ -27,7 +27,100 @@ async function assertProgressVisible(page,name){
   assert.ok(await page.locator('.progress').evaluate(el=>el.offsetHeight>0),`${name} packing progress has no height`);
 }
 
-test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{for(const [name,viewport] of [['desktop',{width:1440,height:1000}],['tablet',{width:768,height:900}],['mobile',{width:390,height:844}]]){let context=await browser.newContext({viewport});await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:base});let page=await context.newPage();await page.goto(base);await page.waitForSelector('tr.today');assert.equal(await page.locator('tr.today').count(),1);assert.equal(await page.locator('#logout .logout-icon').count(),1,'logout icon is missing');assert.equal(await page.locator('.aside-title #newTrip').evaluate(el=>getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'),true,`${name} new trip action is not visible`);assert.equal(await page.locator('aside .trip-actions').count(),0,'active trip menu must not stay in the switcher');assert.equal(await page.locator('.trip-actions').count(),1,'active trip menu must appear once');assert.equal(await page.locator('.trip-actions .menu-panel #newTrip').count(),0,'new trip must not be inside active trip menu');await assertProgressHidden(page,`${name} itinerary`);await page.locator('summary[aria-label="更多操作"]').click();assert.equal(await page.locator('.trip-actions .menu-panel button').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim()).join('|')),'复制当前旅行|打印|删除旅行','active trip menu contains non-trip actions');const menuBox=await page.locator('.trip-actions .menu-panel').boundingBox(),toolbarBox=await page.locator('.desktop-toolbar').boundingBox(),viewportSize=page.viewportSize();assert.ok(menuBox&&toolbarBox,'active trip menu is not visible');assert.equal(menuBox.x+menuBox.width<=viewportSize.width,true,`${name} menu overflows viewport`);if(viewport.width>680){assert.ok(menuBox.x>=toolbarBox.x+toolbarBox.width/2,`${name} menu is not in the detail header right side`)}else{const summaryBox=await page.locator('.trip-actions summary').boundingBox(),tabsBox=await page.locator('.tabs').boundingBox();assert.equal(await page.locator('.desktop-toolbar .trip-heading').evaluate(el=>getComputedStyle(el).display),'none','mobile repeats current trip heading');assert.ok(summaryBox&&tabsBox&&summaryBox.y<tabsBox.y,'mobile trip actions are not a compact top-level entry')}await page.locator('summary[aria-label="更多操作"]').click();assert.equal(await page.locator('.itinerary-block .section-title h2').evaluate(el=>getComputedStyle(el).display),'none','redundant itinerary heading is visible');await page.locator('#tabs [data-tab="bookings"]').click();await assertProgressHidden(page,`${name} bookings`);let copy=page.getByRole('button',{name:'复制航班/车次'});await copy.click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'G123');await page.getByText('已复制到剪贴板').waitFor();await page.locator('#tabs [data-tab="packing"]').click();await assertProgressVisible(page,name);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,`${name} has page-level horizontal overflow`);if(name==='mobile'){assert.equal(await page.locator('.column-head').first().evaluate(el=>getComputedStyle(el).display),'none');assert.equal(await page.locator('.mobile-check').first().evaluate(el=>getComputedStyle(el).display),'block');assert.equal(await page.locator('.item-qty').first().textContent(),'×1');assert.equal(await page.locator('aside').evaluate(el=>getComputedStyle(el).overflowY),'visible','trip switcher creates nested scrolling');const tabsBox=await page.locator('.tabs').boundingBox(),progressBox=await page.locator('.progress').boundingBox();assert.ok(tabsBox&&progressBox&&progressBox.y>tabsBox.y+tabsBox.height,'packing progress must follow tabs');await page.locator('#toast').evaluate(el=>el.className='');await page.screenshot({path:join(root,'docs/evidence/ux-mobile-packing.png'),fullPage:true})}if(name!=="tablet")await page.screenshot({path:join(root,`docs/evidence/ux-${name}.png`),fullPage:true});await context.close()}
-let page=await browser.newPage();await page.goto(base);await page.getByRole('button',{name:/可删除旅行/}).click();await page.locator('summary[aria-label="更多操作"]').click();await page.getByRole('button',{name:'删除旅行',exact:true}).click();await page.getByText('此操作无法撤销').waitFor();await page.getByRole('button',{name:'永久删除'}).click();await page.getByText('旅行已删除').waitFor();assert.equal(await page.getByRole('button',{name:/可删除旅行/}).count(),0);page.once('dialog',d=>{assert.match(d.message(),/唯一一份旅行/);d.accept()});await page.locator('summary[aria-label="更多操作"]').click();await page.getByRole('button',{name:'删除旅行',exact:true}).click()});
+async function assertTripMenuDismissal(page,name){
+  const summary=page.locator('summary[aria-label="更多操作"]');
+  const menu=page.locator('.trip-actions details.menu');
+  await summary.click();
+  await page.waitForFunction(()=>{let menu=document.querySelector('.trip-actions details.menu'),summary=menu?.querySelector('summary');return menu?.open&&summary?.getAttribute('aria-expanded')==='true'});
+  assert.equal(await menu.evaluate(el=>el.open),true,`${name} menu did not open`);
+  await page.mouse.click(20,20);
+  assert.equal(await menu.evaluate(el=>el.open),false,`${name} menu did not close on outside click`);
+  assert.equal(await summary.getAttribute('aria-expanded'),'false',`${name} menu aria-expanded did not close after outside click`);
+  await summary.click();
+  await page.locator('#deleteTrip').focus();
+  await page.waitForTimeout(50);
+  assert.equal(await menu.evaluate(el=>el.open),true,`${name} menu closed while focus stayed inside`);
+  await page.locator('#tabs [data-tab="bookings"]').focus();
+  await page.waitForFunction(()=>!document.querySelector('.trip-actions details.menu').open);
+  assert.equal(await summary.getAttribute('aria-expanded'),'false',`${name} menu aria-expanded did not close after focus left`);
+  await summary.click();
+  await page.waitForFunction(()=>document.querySelector('.trip-actions details.menu')?.open);
+  await summary.press('Escape');
+  assert.equal(await menu.evaluate(el=>el.open),false,`${name} menu did not close on Escape`);
+  assert.equal(await summary.getAttribute('aria-expanded'),'false',`${name} menu aria-expanded did not close after Escape`);
+  await summary.click();
+  await page.getByRole('button',{name:'复制当前旅行'}).click();
+  await page.waitForFunction(()=>!document.querySelector('.trip-actions details.menu').open);
+  await expectActiveTripCopy(page,name);
+}
+
+async function expectActiveTripCopy(page,name){
+  assert.match(await page.locator('#tripName').inputValue(),/副本$/,`${name} duplicate action did not complete from inside the menu`);
+}
+
+test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
+  for(const [name,viewport] of [['desktop',{width:1440,height:1000}],['tablet',{width:768,height:900}],['mobile',{width:390,height:844}]]){
+    let context=await browser.newContext({viewport});
+    await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:base});
+    let page=await context.newPage();
+    await page.goto(base);
+    await page.waitForSelector('tr.today');
+    assert.equal(await page.locator('tr.today').count(),1);
+    assert.equal(await page.locator('#logout .logout-icon').count(),1,'logout icon is missing');
+    assert.equal(await page.locator('.aside-title #newTrip').evaluate(el=>getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'),true,`${name} new trip action is not visible`);
+    assert.equal(await page.locator('aside .trip-actions').count(),0,'active trip menu must not stay in the switcher');
+    assert.equal(await page.locator('.trip-actions').count(),1,'active trip menu must appear once');
+    assert.equal(await page.locator('.trip-actions .menu-panel #newTrip').count(),0,'new trip must not be inside active trip menu');
+    await assertProgressHidden(page,`${name} itinerary`);
+    await page.locator('summary[aria-label="更多操作"]').click();
+    assert.equal(await page.locator('.trip-actions .menu-panel button').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim()).join('|')),'复制当前旅行|打印|删除旅行','active trip menu contains non-trip actions');
+    const menuBox=await page.locator('.trip-actions .menu-panel').boundingBox(),toolbarBox=await page.locator('.desktop-toolbar').boundingBox(),viewportSize=page.viewportSize();
+    assert.ok(menuBox&&toolbarBox,'active trip menu is not visible');
+    assert.equal(menuBox.x+menuBox.width<=viewportSize.width,true,`${name} menu overflows viewport`);
+    if(viewport.width>680){
+      assert.ok(menuBox.x>=toolbarBox.x+toolbarBox.width/2,`${name} menu is not in the detail header right side`);
+    }else{
+      const summaryBox=await page.locator('.trip-actions summary').boundingBox(),tabsBox=await page.locator('.tabs').boundingBox();
+      assert.equal(await page.locator('.desktop-toolbar .trip-heading').evaluate(el=>getComputedStyle(el).display),'none','mobile repeats current trip heading');
+      assert.ok(summaryBox&&tabsBox&&summaryBox.y<tabsBox.y,'mobile trip actions are not a compact top-level entry');
+    }
+    await page.locator('summary[aria-label="更多操作"]').click();
+    await assertTripMenuDismissal(page,name);
+    assert.equal(await page.locator('.itinerary-block .section-title h2').evaluate(el=>getComputedStyle(el).display),'none','redundant itinerary heading is visible');
+    await page.locator('#tabs [data-tab="bookings"]').click();
+    await assertProgressHidden(page,`${name} bookings`);
+    let copy=page.getByRole('button',{name:'复制航班/车次'});
+    await copy.click();
+    assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'G123');
+    await page.getByText('已复制到剪贴板').waitFor();
+    await page.locator('#tabs [data-tab="packing"]').click();
+    await assertProgressVisible(page,name);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,`${name} has page-level horizontal overflow`);
+    if(name==='mobile'){
+      assert.equal(await page.locator('.column-head').first().evaluate(el=>getComputedStyle(el).display),'none');
+      assert.equal(await page.locator('.mobile-check').first().evaluate(el=>getComputedStyle(el).display),'block');
+      assert.equal(await page.locator('.item-qty').first().textContent(),'×1');
+      assert.equal(await page.locator('aside').evaluate(el=>getComputedStyle(el).overflowY),'visible','trip switcher creates nested scrolling');
+      const tabsBox=await page.locator('.tabs').boundingBox(),progressBox=await page.locator('.progress').boundingBox();
+      assert.ok(tabsBox&&progressBox&&progressBox.y>tabsBox.y+tabsBox.height,'packing progress must follow tabs');
+      await page.locator('#toast').evaluate(el=>el.className='');
+      await page.screenshot({path:join(root,'docs/evidence/ux-mobile-packing.png'),fullPage:true});
+    }
+    if(name!=="tablet")await page.screenshot({path:join(root,`docs/evidence/ux-${name}.png`),fullPage:true});
+    await context.close();
+  }
+  let page=await browser.newPage();
+  await page.goto(base);
+  await page.getByRole('button',{name:/可删除旅行/}).click();
+  await page.locator('summary[aria-label="更多操作"]').click();
+  await page.getByRole('button',{name:'删除旅行',exact:true}).click();
+  await page.getByText('此操作无法撤销').waitFor();
+  await page.getByRole('button',{name:'永久删除'}).click();
+  await page.getByText('旅行已删除').waitFor();
+  assert.equal(await page.getByRole('button',{name:/可删除旅行/}).count(),0);
+  page.once('dialog',d=>{assert.match(d.message(),/唯一一份旅行/);d.accept()});
+  await page.locator('summary[aria-label="更多操作"]').click();
+  await page.getByRole('button',{name:'删除旅行',exact:true}).click();
+});
 
 test('A4 landscape print PDF stays within printable page',async()=>{let page=await browser.newPage({viewport:{width:1440,height:1000}});await page.goto(base);for(const [tab,label] of [['itinerary','行程'],['bookings','预订与联系人'],['packing','装箱清单']]){await page.locator(`#tabs [data-tab="${tab}"]`).click();let file=join(root,`docs/evidence/print-${label}.pdf`);await page.pdf({path:file,format:'A4',landscape:true,printBackground:true,preferCSSPageSize:true});let pdf=await PDFDocument.load(await readFile(file));assert.ok(pdf.getPageCount()>=1);for(const p of pdf.getPages()){let {width,height}=p.getSize();assert.ok(width>height);assert.ok(Math.abs(width-841.89)<3&&Math.abs(height-595.28)<3)}}});
