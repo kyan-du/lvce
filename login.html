@@ -1,1 +1,77 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#355f56"><title>登录 · 旅册</title><link rel="stylesheet" href="style.css"><style>body{min-height:100vh;display:grid;place-items:center;background:#f4f1e9}.login{width:min(88vw,380px);background:white;padding:32px;border-radius:16px;box-shadow:0 12px 40px #355f5620}.login h1{margin:0 0 6px}.login label,.login input,.login button{display:block;width:100%;box-sizing:border-box}.login input{margin:18px 0 12px;padding:12px}.error{color:#9b392d;min-height:1.5em}</style></head><body><form class="login" id="login" autocomplete="on"><span class="eyebrow">FAMILY TRAVEL PLANNER</span><h1>旅册</h1><label for="password">请输入密码</label><input id="password" name="password" type="password" autocomplete="current-password" required autofocus><p class="error" id="error"></p><button class="primary" type="submit">登录</button></form><script>login.onsubmit=async e=>{e.preventDefault();error.textContent='';const button=e.currentTarget.querySelector('button');button.disabled=true;try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:password.value})});if(!r.ok){const x=await r.json();throw Error(x.error||'登录失败')}location.replace('/')}catch(e){error.textContent=e.message;button.disabled=false}}</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#355f56">
+  <title>登录 · 旅册</title>
+  <link rel="icon" href="/favicon.ico?v=4e7ee0e9" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32-4e7ee0e9.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon-180-4e7ee0e9.png">
+  <link rel="manifest" href="/site.webmanifest?v=4e7ee0e9">
+  <link rel="stylesheet" href="/style.css?v=20260804-0600">
+  <style>
+    body{min-height:100vh;display:grid;place-items:center;background:#f4f1e9}
+    .login{width:min(88vw,380px);background:white;padding:32px;border-radius:16px;box-shadow:0 12px 40px #355f5620}
+    .login-brand{display:flex;align-items:center;gap:clamp(12px,3vw,16px);max-width:100%;margin:0 0 6px}
+    .login-brand .brand-logo{display:block;width:46px;height:46px;object-fit:contain;flex:none}
+    .login-brand h1{margin:0;line-height:1}
+    .login label,.login input,.login button{display:block;width:100%;box-sizing:border-box}
+    .login input{margin:18px 0 12px;padding:12px}
+    .error{color:#9b392d;min-height:1.5em}
+    @media(max-width:420px){
+      .login{padding:28px}
+      .login-brand{gap:10px}
+      .login-brand .brand-logo{width:38px;height:38px}
+    }
+  </style>
+</head>
+<body>
+  <form class="login" id="login" autocomplete="on">
+    <span class="eyebrow">FAMILY TRAVEL PLANNER</span>
+    <div class="login-brand">
+      <img class="brand-logo" src="/assets/lvce-logo-4e7ee0e9.png" width="512" height="512" alt="LVCE logo">
+      <h1>旅册</h1>
+    </div>
+    <label for="password">请输入密码</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+    <p class="error" id="error"></p>
+    <button class="primary" type="submit">登录</button>
+  </form>
+  <script>
+    async function loginRequest(passwordValue){
+      let r;
+      try{
+        r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:passwordValue})});
+      }catch{
+        return{ok:false,message:'网络连接失败，请稍后重试'};
+      }
+      if(r.status===204)return{ok:true};
+      const type=(r.headers.get('content-type')||'').toLowerCase();
+      if(!type.includes('application/json'))return{ok:false,message:'登录服务响应异常，请刷新后重试'};
+      let result;
+      try{
+        result=await r.json();
+      }catch{
+        return{ok:false,message:'登录服务响应异常，请刷新后重试'};
+      }
+      if(r.status===401)return{ok:false,message:'密码不正确'};
+      if(!r.ok)return{ok:false,message:result?.error||'登录失败，请稍后重试'};
+      return{ok:true};
+    }
+    login.onsubmit=async e=>{
+      e.preventDefault();
+      error.textContent='';
+      const button=e.currentTarget.querySelector('button');
+      button.disabled=true;
+      const result=await loginRequest(password.value);
+      if(result.ok){
+        location.replace('/');
+        return;
+      }
+      error.textContent=result.message;
+      button.disabled=false;
+    };
+  </script>
+</body>
+</html>

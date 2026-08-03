@@ -18,11 +18,29 @@
 npm install
 cp .dev.vars.example .dev.vars # 按注释填入值
 npm run hash-password -- "你的家庭口令"
-npx wrangler d1 execute lvce --local --file schema.sql
-npx wrangler pages dev . --d1 DB=lvce
+npm run db:local:init
+npm run preview:local
 ```
 
-本地 Pages 地址通常为 <http://localhost:8788>。不要用普通静态服务器运行，否则 Functions 不可用。
+本地 Pages 地址为 <http://localhost:8789>。不要用普通静态服务器运行，否则 Functions 不可用。`db:local:init` 固定使用 `wrangler d1 execute lvce --local` 初始化本地 D1，`preview:local` 使用 Wrangler Pages Dev 读取 `wrangler.toml` 中的本地 D1 绑定，不会访问或修改生产 D1。
+
+如需通过现有 Cloudflare named tunnel `kyan` 预览，先确认 `~/.cloudflared/config.yml` 已保留 `hooks.visionclaw.online`、`tg.visionclaw.online`、`gz.visionclaw.online`，并额外包含：
+
+```yaml
+  - hostname: lvce.visionclaw.online
+    service: http://localhost:8789
+```
+
+然后分别启动：
+
+```bash
+npm run preview:local
+cloudflared tunnel run kyan
+```
+
+对外预览地址为 <https://lvce.visionclaw.online>。停止时在对应终端按 `Ctrl+C`；如使用 Homebrew 后台服务运行 tunnel，可用 `brew services restart cloudflared` 让配置重新加载。
+
+如果当前机器使用 token-managed tunnel，cloudflared 会读取 Cloudflare 端的远程 ingress 配置；这种情况下也需要在 Zero Trust 的 `kyan` tunnel 配置中保留现有 hostname，并添加同一条 `lvce.visionclaw.online -> http://localhost:8789` 规则。
 
 ## Cloudflare 首次部署
 

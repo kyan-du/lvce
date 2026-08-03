@@ -1,6 +1,6 @@
 import {validateDocument,MAX_BYTES} from '../../lib/trips.js';
 const headers={'Cache-Control':'no-store'};
-export async function onRequestGet({env}){const row=await env.DB.prepare("SELECT data, updated_at, version FROM documents WHERE id = 'trips'").first();return Response.json(row?{data:JSON.parse(row.data),updatedAt:row.updated_at,version:row.version}:{data:null,version:0},{headers})}
+export async function onRequestGet({env}){const row=await env.DB.prepare("SELECT data, updated_at, version FROM documents WHERE id = 'trips'").first();let shares={};try{let result=await env.DB.prepare('SELECT trip_id FROM public_trip_shares').all();shares=Object.fromEntries((result.results||[]).map(r=>[r.trip_id,true]))}catch{}return Response.json(row?{data:JSON.parse(row.data),updatedAt:row.updated_at,version:row.version,shares}:{data:null,version:0,shares:{}},{headers})}
 export async function onRequestPut({request,env}){
  const length=Number(request.headers.get('content-length')||0);if(length>MAX_BYTES)return Response.json({error:'数据过大'},{status:413,headers});
  let data;try{data=await request.json()}catch{return Response.json({error:'JSON 格式错误'},{status:400,headers})}

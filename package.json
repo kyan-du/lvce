@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "preview:local": "wrangler pages dev . --port 8789",
+    "db:local:init": "wrangler d1 execute lvce --local --file schema.sql",
     "test": "node --test",
     "test:browser:install": "playwright-core install chromium",
     "check": "node --check app.js && find functions lib scripts -name '*.js' -o -name '*.mjs' | xargs -n1 node --check",
