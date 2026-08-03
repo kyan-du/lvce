@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';import {pbk
 const b=v=>Buffer.from(v).toString('base64url');
 test('PBKDF2 password verification',async()=>{const salt=Buffer.from('0123456789abcdef'),hash=`pbkdf2-sha256$100000$${b(salt)}$${b(pbkdf2Sync('hello',salt,100000,32,'sha256'))}`;assert.equal(await verifyPassword('hello',hash),true);assert.equal(await verifyPassword('no',hash),false)});
 test('signed session carries server-verifiable id, expires and rejects tampering',async()=>{const token=await makeSession('long random secret',0,'session-1');assert.equal((await readSession(token,'long random secret',1000)).sid,'session-1');assert.equal(await verifySession(token,'long random secret',1000),true);assert.equal(await verifySession(token+'x','long random secret',1000),false);assert.equal(await verifySession(token,'long random secret',31*864e5),false)});
-test('trip document validation',()=>{const valid={active:'a',tab:'packing',trips:[{id:'a',name:'A',categories:[],itinerary:[],transport:[],hotels:[],tickets:[['景点','2026-08-03','成人票','2','张三','¥20','凭证使用']],emergency:[],tour:[['旧团','保留','不展示']]}]};assert.equal(validateDocument(valid),null);assert.equal(validateDocument({...valid,trips:[{...valid.trips[0],tickets:undefined}]}),null,'old documents without tickets should remain valid');assert.match(validateDocument({...valid,trips:[{...valid.trips[0],tickets:{}}]}),/tickets/);assert.match(validateDocument({trips:[]}),/active/);assert.match(validateDocument({...valid,pad:'x'.repeat(MAX_BYTES)}),/字节/)});
+test('trip document validation',()=>{const valid={active:'a',tab:'packing',trips:[{id:'a',name:'A',categories:[],itinerary:[],transport:[],hotels:[],tickets:[['景点','2026-08-03','成人票','2','张三','¥20','凭证使用']],emergency:[],tour:[['旧团','保留','不展示']],readings:[{id:'r',title:'旅读',source:'/assets/readings/a.md'}]}]};assert.equal(validateDocument(valid),null);assert.equal(validateDocument({...valid,trips:[{...valid.trips[0],tickets:undefined,readings:undefined}]}),null,'old documents without tickets/readings should remain valid');assert.match(validateDocument({...valid,trips:[{...valid.trips[0],tickets:{}}]}),/tickets/);assert.match(validateDocument({...valid,trips:[{...valid.trips[0],readings:{}}]}),/readings/);assert.match(validateDocument({trips:[]}),/active/);assert.match(validateDocument({...valid,pad:'x'.repeat(MAX_BYTES)}),/字节/)});
 
 test('trip JSON roundtrip keeps tickets and legacy tour',()=>{
   const trip={active:'a',tab:'bookings',trips:[{id:'a',name:'A',categories:[],itinerary:[],transport:[],hotels:[],tickets:[['景点','2026-08-03','夜场','2','游客','¥20','说明']],emergency:[],tour:[['旧团数据']]}]};
@@ -80,7 +80,7 @@ function run(sql,args,db){
     }
   };
 }
-const shareDoc={active:'one',tab:'bookings',trips:[{id:'one',name:'公开旅行',categories:[],itinerary:[['2026-08-03','09:00','A','B','C','D']],transport:[],hotels:[],tickets:[['公开门票','2026-08-03','上午场','1','张三','¥88','凭二维码入园']],emergency:[],tour:[['旧旅行团','仍保留']]},{id:'two',name:'私有旅行',categories:[],itinerary:[['secret']],transport:[],hotels:[],tickets:[['私有门票']],emergency:[],tour:[]}]};
+const shareDoc={active:'one',tab:'bookings',trips:[{id:'one',name:'公开旅行',categories:[],itinerary:[['2026-08-03','09:00','A','B','C','D']],transport:[],hotels:[],tickets:[['公开门票','2026-08-03','上午场','1','张三','¥88','凭二维码入园']],emergency:[['家人','139 **** 0000','备注','139 0000 0000']],tour:[['旧旅行团','仍保留']],readings:[{id:'r',title:'旅读'}]},{id:'two',name:'私有旅行',categories:[],itinerary:[['secret']],transport:[],hotels:[],tickets:[['私有门票']],emergency:[],tour:[],readings:[]}]};
 const jsonReq=(method,body)=>new Request('https://example.test/api/trips/share',{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 
 test('public trip share create, read, revoke and reshare lifecycle',async()=>{
@@ -101,6 +101,9 @@ test('public trip share create, read, revoke and reshare lifecycle',async()=>{
   assert.equal(body.data.trips[0].name,'公开旅行');
   assert.deepEqual(body.data.trips[0].tickets,shareDoc.trips[0].tickets,'public API should retain ticket rows');
   assert.deepEqual(body.data.trips[0].tour,shareDoc.trips[0].tour,'public API should retain legacy tour data for compatibility');
+  assert.deepEqual(body.data.trips[0].readings,shareDoc.trips[0].readings,'public API should retain reading metadata');
+  assert.equal(body.data.trips[0].emergency[0][1],'139 **** 0000','public API should mask emergency phones');
+  assert.equal(body.data.trips[0].emergency[0][3],'','public API should not expose full emergency phones');
   assert.equal(JSON.stringify(body).includes('私有旅行'),false,'public API leaked another trip');
   assert.equal(JSON.stringify(body).includes('私有门票'),false,'public API leaked another trip ticket');
 

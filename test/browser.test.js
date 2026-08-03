@@ -17,7 +17,7 @@ function shanghaiDate(date=new Date()){
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 const today=shanghaiDate();
-const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'09:00','今日活动','地点','联系人','备注'],[today,'10:00','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 0000 0000','']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[]}]};
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'09:00','今日活动','地点','联系人','备注'],[today,'10:00','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
 function pngSize(buffer){
   assert.equal(buffer.toString('ascii',1,4),'PNG','asset is not a PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20),colorType:buffer[25]};
@@ -188,15 +188,22 @@ async function assertHeaderLogo(page,name){
       subtitle:rect('#subtitle'),
       brandLine:rect('header .brand-line'),
       main:rect('main'),
+      workspace:rect('.workspace'),
+      aside:document.querySelector('aside')?rect('aside'):null,
+      workspacePaddingLeft:parseFloat(getComputedStyle(document.querySelector('.workspace')).paddingLeft),
+      asidePaddingLeft:document.querySelector('aside')?parseFloat(getComputedStyle(document.querySelector('aside')).paddingLeft):0,
+      publicView:document.body.classList.contains('public-view'),
       mobileAsideBorderRight:matchMedia('(max-width: 680px)').matches?getComputedStyle(document.querySelector('aside')).borderRightWidth:null,
       headerBottomElement:document.elementFromPoint(innerWidth/2,document.querySelector('header').getBoundingClientRect().bottom-1)?.closest('header')?.tagName||'',
       logout:document.querySelector('#logout')?.getClientRects().length?rect('#logout'):null
     };
   });
+  const targetLeft=metrics.workspace.left+metrics.workspacePaddingLeft;
   assert.equal(metrics.logo.width,metrics.logo.height,`${name} logo should keep a square box without distortion`);
-  assert.ok(Math.abs(metrics.brand.centerX-metrics.eyebrow.centerX)<=1,`${name} eyebrow is not centered on the brand axis`);
-  assert.ok(Math.abs(metrics.brand.centerX-metrics.brandLine.centerX)<=1,`${name} logo and title group is not centered on the brand axis`);
-  assert.ok(Math.abs(metrics.brand.centerX-metrics.subtitle.centerX)<=1,`${name} subtitle is not centered on the brand axis`);
+  assert.ok(Math.abs(metrics.brand.left-targetLeft)<=1,`${name} brand left edge does not align with the page content`);
+  assert.ok(Math.abs(metrics.brand.left-metrics.eyebrow.left)<=1,`${name} eyebrow is not left-aligned with the brand`);
+  assert.ok(Math.abs(metrics.brand.left-metrics.brandLine.left)<=1,`${name} logo and title group is not left-aligned with the brand`);
+  assert.ok(Math.abs(metrics.brand.left-metrics.subtitle.left)<=1,`${name} subtitle is not left-aligned with the brand`);
   assert.ok(Math.abs(metrics.logo.centerY-metrics.brandLine.centerY)<=1,`${name} logo is not visually centered in the brand line`);
   assert.ok(Math.abs(metrics.logo.centerY-metrics.title.centerY)<=1,`${name} logo is not vertically centered with the title`);
   assert.ok(metrics.logo.right<metrics.title.left,`${name} logo should sit to the left of the title`);
@@ -223,6 +230,7 @@ test('header brand logo is reused on main and public share pages without layout 
     const page=await browser.newPage({viewport});
     await page.goto(url);
     await page.waitForSelector('tr.today');
+    await page.screenshot({path:join(root,'docs/evidence',`header-${name.replaceAll(' ','-')}.png`),fullPage:false});
     await assertHeaderLogo(page,name);
     await page.close();
   }
@@ -282,9 +290,33 @@ async function assertReadableCellEditor(locator,name){
 
 async function assertCellEditorAutogrows(locator,name){
   await locator.fill('第一行\n第二行内容需要完整显示\n第三行');
-  const metrics=await locator.evaluate(el=>({offsetHeight:el.offsetHeight,clientHeight:el.clientHeight,scrollHeight:el.scrollHeight}));
+  const metrics=await locator.evaluate(el=>({offsetHeight:el.offsetHeight,clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,resize:getComputedStyle(el).resize,overflowY:getComputedStyle(el).overflowY}));
   assert.ok(metrics.offsetHeight>42,`${name} editor did not grow for multiline content`);
   assert.ok(metrics.clientHeight+1>=metrics.scrollHeight,`${name} editor scroll height exceeds visible height`);
+  assert.equal(metrics.resize,'none',`${name} editor should not expose manual resize handles`);
+  assert.equal(metrics.overflowY,'hidden',`${name} editor should not show a vertical scrollbar`);
+}
+
+async function assertEditorRowAutogrows(page,locator,name){
+  await locator.fill('');
+  const empty=await locator.evaluate(el=>{
+    const td=el.closest('td').getBoundingClientRect(),row=el.closest('tr').getBoundingClientRect(),s=getComputedStyle(el);
+    return {editor:el.getBoundingClientRect().height,td:td.height,row:row.height,minHeight:parseFloat(s.minHeight),clientHeight:el.clientHeight,scrollHeight:el.scrollHeight};
+  });
+  assert.ok(empty.editor>=empty.minHeight,`${name} empty editor is below its minimum height`);
+  assert.ok(empty.clientHeight+1>=empty.scrollHeight,`${name} empty editor has an internal vertical scroll`);
+  await locator.fill('第一行\n第二行内容比较长用于触发换行和撑高\n第三行\n第四行\n第五行');
+  await page.waitForFunction(el=>el.clientHeight+1>=el.scrollHeight,await locator.elementHandle());
+  const grown=await locator.evaluate(el=>{
+    const td=el.closest('td').getBoundingClientRect(),row=el.closest('tr').getBoundingClientRect(),s=getComputedStyle(el);
+    return {editor:el.getBoundingClientRect().height,td:td.height,row:row.height,clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,overflowY:s.overflowY};
+  });
+  assert.ok(grown.editor>empty.editor+30,`${name} editor height did not follow multiline content`);
+  assert.ok(grown.td>empty.td+30,`${name} table cell/card section did not grow with editor content`);
+  assert.ok(grown.row>empty.row+30,`${name} table row/card did not grow with editor content`);
+  assert.ok(grown.clientHeight+1>=grown.scrollHeight,`${name} grown editor has an internal vertical scroll`);
+  assert.equal(grown.overflowY,'hidden',`${name} grown editor should keep vertical overflow hidden`);
+  await locator.fill('');
 }
 
 async function categoryTitleMetrics(page){
@@ -511,6 +543,63 @@ test('public shared trip page is read-only and omits management controls',async(
   assert.equal(await page.locator('.tickets-block .cell-view').first().textContent(),document.trips[0].tickets[0][0],'public page should render ticket names');
   assert.equal(await page.getByText('旅行团').count(),0,'public page should not show legacy tour section');
   assert.equal(await page.getByText('可删除旅行').count(),0,'public page leaked another trip');
+  await page.close();
+});
+
+test('reading tab renders safe markdown and emergency phones follow auth visibility',async()=>{
+  sharedTrips.clear();
+  publicTokens.clear();
+  const token='r'.repeat(43);
+  sharedTrips.add('one');
+  publicTokens.set(token,'one');
+
+  const context=await browser.newContext({viewport:{width:1024,height:800}});
+  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:base});
+  let page=await context.newPage();
+  await page.goto(base);
+  await page.waitForSelector('tr.today');
+  assert.deepEqual(await page.locator('#tabs button').evaluateAll(nodes=>nodes.map(n=>n.dataset.tab)),['itinerary','bookings','packing','reading'],'reading tab must be last');
+
+  await page.locator('#tabs [data-tab="bookings"]').click();
+  const privatePhoneCell=page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').first();
+  assert.equal((await privatePhoneCell.textContent()).replace('复制','').trim(),'139 0000 0000','logged-in app should show the full emergency phone');
+  await page.locator('.booking-grid .table-block').last().locator('button[aria-label="复制电话"]').click();
+  assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'139 0000 0000','logged-in copy should use the full emergency phone');
+
+  await page.locator('#tabs [data-tab="reading"]').click();
+  assert.equal(await page.locator('.reading-card').count(),2,'normalization should keep existing readings and the default source reading');
+  const mawangduiCard=page.locator('.reading-card').filter({hasText:'马王堆《老子》帛书及相关考古发现'});
+  assert.equal(await mawangduiCard.locator('small').textContent(),'湖南博物院');
+  await mawangduiCard.click();
+  await page.waitForSelector('.markdown-body table');
+  assert.equal(await page.locator('.reading-head h2').textContent(),'马王堆《老子》帛书及相关考古发现');
+  assert.equal(await page.locator('.reading-head p').textContent(),'湖南博物院');
+  assert.ok(await page.locator('.markdown-body h2').count()>0,'markdown headings should render');
+  assert.ok(await page.locator('.markdown-body ul li').count()>0,'markdown lists should render');
+  assert.ok(await page.locator('.markdown-body blockquote').count()>0,'markdown quotes should render');
+  assert.ok(await page.locator('.markdown-body pre code').count()>0,'markdown code blocks should render');
+  assert.ok(await page.locator('.markdown-body hr').count()>0,'markdown horizontal rules should render');
+  assert.ok(await page.locator('.markdown-table-scroll table').count()>0,'markdown tables should render in scroll wrappers');
+  assert.equal(await page.evaluate(()=>document.querySelector('.markdown-body script')===null),true,'markdown must not create script elements');
+  await page.close();
+  await context.close();
+
+  page=await browser.newPage({viewport:{width:390,height:844}});
+  await page.goto(base);
+  await page.locator('#tabs [data-tab="reading"]').click();
+  await page.locator('.reading-card').filter({hasText:'马王堆《老子》帛书及相关考古发现'}).click();
+  await page.waitForSelector('.markdown-body table');
+  const tableMetrics=await page.locator('.markdown-table-scroll').first().evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}));
+  assert.ok(tableMetrics.scrollWidth>tableMetrics.clientWidth,'narrow markdown tables should scroll inside their own wrapper');
+  assert.equal(tableMetrics.pageOverflow,false,'reading page should not overflow horizontally on mobile');
+  await page.close();
+
+  page=await browser.newPage({viewport:{width:1024,height:800}});
+  await page.goto(`${base}/share/${token}`);
+  await page.waitForSelector('tr.today');
+  await page.locator('#tabs [data-tab="bookings"]').click();
+  const publicPhone=await page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').first().textContent();
+  assert.equal(publicPhone.trim(),'139 **** 0000','public share should keep emergency phone masked');
   await page.close();
 });
 
@@ -871,6 +960,27 @@ test('mobile itinerary and booking cell editors keep text readable',async()=>{
   await assertReadableCellEditor(bookingEditor,'mobile booking');
   await assertCellEditorAutogrows(bookingEditor,'mobile booking');
   await page.close();
+});
+
+test('booking textarea editors expand rows and cards without internal vertical scrolling',async()=>{
+  putBodies=[];
+  for(const [name,viewport] of [['desktop',{width:1024,height:800}],['mobile',{width:390,height:844}]]){
+    const page=await browser.newPage({viewport});
+    await page.goto(base);
+    await page.waitForSelector('tr.today');
+    await page.locator('#tabs [data-tab="bookings"]').click();
+    await page.locator('summary[aria-label="更多操作"]').click();
+    await page.getByRole('button',{name:'修改',exact:true}).click();
+    await page.waitForFunction(()=>document.body.classList.contains('editing'));
+
+    for(const label of ['航班/车次','座位号','日期','出发地']){
+      await assertEditorRowAutogrows(page,page.locator(`.transport-block textarea[aria-label="${label}"]`).first(),`${name} transport ${label}`);
+    }
+
+    await assertEditorRowAutogrows(page,page.locator('.booking-grid textarea[aria-label="地址"]').first(),`${name} hotel address`);
+    await page.close();
+  }
+  putBodies=[];
 });
 
 test('edit actions snapshot, cancel, save and trip switching',async()=>{
