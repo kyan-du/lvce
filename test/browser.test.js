@@ -1060,6 +1060,12 @@ test('itinerary next-item highlight follows Asia/Shanghai time without coloring 
     let page=await pageWithMockedNow('2026-08-04T00:30:00.000Z');
     await page.goto(base);
     await assertSingleNextItinerary(page,'第一项');
+    await page.locator('summary[aria-label="更多操作"]').click();
+    await page.getByRole('button',{name:'修改',exact:true}).click();
+    assert.equal(await page.locator('tr.next-itinerary,tr.today').count(),0,'edit mode must not show or mark the next itinerary item');
+    assert.equal(await page.getByText('下一件').count(),0,'edit mode must not expose a next-item label');
+    await page.getByRole('button',{name:'取消',exact:true}).click();
+    await assertSingleNextItinerary(page,'第一项');
     let colors=await page.evaluate(()=>{
       const date=document.querySelector('td.itinerary-date-cell'),time=document.querySelector('tr.next-itinerary td[data-label="时间"]');
       return {date:getComputedStyle(date).backgroundColor,time:getComputedStyle(time).backgroundColor,rowspan:date.rowSpan};
@@ -1080,6 +1086,41 @@ test('itinerary next-item highlight follows Asia/Shanghai time without coloring 
     await page.close();
   }finally{
     document.trips[0].itinerary=oldItinerary;
+    document.tab=oldTab;
+  }
+});
+
+test('editing tables put delete actions in a centered no-wrap operation column on desktop and mobile',async()=>{
+  const oldTab=document.tab;
+  document.tab='bookings';
+  try{
+    for(const viewport of [{width:1024,height:800},{width:390,height:844}]){
+      const page=await browser.newPage({viewport});
+      await page.goto(base);
+      await page.locator('summary[aria-label="更多操作"]').click();
+      await page.getByRole('button',{name:'修改',exact:true}).click();
+      const row=page.locator('.tickets-block tbody tr').first(),action=row.locator('td.row-action'),button=action.locator('.remove-row');
+      assert.equal(await page.locator('.tickets-block th.row-action-head').textContent(),'操作');
+      assert.equal(await action.getAttribute('data-label'),'操作');
+      assert.equal(await row.locator('td[data-label="使用说明"] .remove-row').count(),0,'delete action should not remain inside the notes cell');
+      const metrics=await button.evaluate(btn=>{
+        const cell=btn.closest('td'),br=btn.getBoundingClientRect(),cr=cell.getBoundingClientRect(),vw=document.documentElement.clientWidth;
+        return {
+          buttonWhiteSpace:getComputedStyle(btn).whiteSpace,
+          cellWhiteSpace:getComputedStyle(cell).whiteSpace,
+          centerDelta:Math.abs((br.left+br.width/2)-(cr.left+cr.width/2)),
+          overflowsViewport:br.left<0||br.right>vw,
+          wraps:br.height>32
+        };
+      });
+      assert.equal(metrics.buttonWhiteSpace,'nowrap','delete button text should stay on one line');
+      assert.equal(metrics.cellWhiteSpace,'nowrap','operation cell should prevent wrapping');
+      assert.ok(metrics.centerDelta<=2,'delete button should be horizontally centered in the operation cell');
+      assert.equal(metrics.overflowsViewport,false,'delete button should fit inside the viewport');
+      assert.equal(metrics.wraps,false,'delete button should remain a single-line control');
+      await page.close();
+    }
+  }finally{
     document.tab=oldTab;
   }
 });
