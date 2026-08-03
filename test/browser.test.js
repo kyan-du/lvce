@@ -1091,14 +1091,14 @@ test('xiangxingji August 4 itinerary keeps both taxi legs and a four-row date sp
     ['2026-08-04','09:00-13:01','G225 上海虹桥→长沙南','上海虹桥／长沙南','胡丽霞','铁路（3张）；预订号 E207924155；13:01抵达长沙南'],
     ['2026-08-04','预计 13:15-13:30','长沙南打车前往长沙IFS国金中心·异国印象酒店(五一广场店)','长沙南→湘江中路2段18号','胡丽霞','预计打车约15分钟，视路况；到店寄存/入住衔接，酒店订单信息以订单为准'],
     ['2026-08-04','预计 14:10-14:35','从酒店打车前往岳麓山+岳麓书院讲解集合点','湘江中路2段18号→岳麓山/岳麓书院讲解集合点','胡丽霞','预计打车约25分钟，视路况；集合点以订单为准'],
-    ['2026-08-04','15:00-约17:00','岳麓山+岳麓书院讲解','岳麓山／岳麓书院','胡丽霞','15:00场；结束时间预计；门票 ¥224；1份；预订成功；使用说明以订单详情页为准'],
+    ['2026-08-04','15:00-预计17:00','岳麓山+岳麓书院讲解','岳麓山／岳麓书院','胡丽霞','15:00为订单场次，结束时间为预计；门票 ¥224；1份；预订成功；使用说明以订单详情页为准'],
     ['2026-08-05','预计 09:30-12:00／待预约确认','橘子洲','长沙','胡丽霞','预计上午游览']
   ];
   try{
     const page=await browser.newPage({viewport:{width:1024,height:800}});
     await page.goto(base);
     assert.equal(await page.locator('.itinerary-date-cell').first().evaluate(el=>el.rowSpan),4,'2026-08-04 date cell must span the four real itinerary rows');
-    assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,4).map(row=>row.querySelector('td[data-label="时间"] .cell-view')?.textContent.trim())),['09:00-13:01','预计 13:15-13:30','预计 14:10-14:35','15:00-约17:00']);
+    assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,4).map(row=>row.querySelector('td[data-label="时间"] .cell-view')?.textContent.trim())),['09:00-13:01','预计 13:15-13:30','预计 14:10-14:35','15:00-预计17:00']);
     assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,4).map(row=>row.querySelector('td[data-label="活动"] .cell-view')?.textContent.trim())),[
       'G225 上海虹桥→长沙南',
       '长沙南打车前往长沙IFS国金中心·异国印象酒店(五一广场店)',
