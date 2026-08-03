@@ -8,7 +8,7 @@
 @media(max-width:680px){html{overflow-x:hidden}#toast{width:max-content;max-width:calc(100vw - 28px);text-align:center}}
 
 /* Trip creation and duplication belong together; account exit stays separate. */
-.trip-actions{display:flex;gap:5px}.aside-title .trip-actions button{white-space:nowrap}.aside-title .trip-actions .primary{padding-inline:9px}
+.trip-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:start}.trip-actions{display:flex;gap:5px}.aside-title .trip-actions button{white-space:nowrap}.aside-title .trip-actions .primary{padding-inline:9px}
 .account-bar{position:fixed;bottom:14px;left:18px;width:184px;color:var(--muted);font-size:11px}
 .account-bar>span{display:block;margin-bottom:7px}
 .account-bar #logout{padding:3px 0;border:0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}
