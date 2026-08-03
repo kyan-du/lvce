@@ -165,7 +165,7 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   .account-bar{display:none}
   .account-bar.important{display:block;margin-top:5px}
   .workspace{padding:0 14px 38px}
-  .desktop-toolbar{display:none}
+  .desktop-toolbar,body[data-tab="packing"] .desktop-toolbar{display:none}
   .tabs{order:0;margin:0 0 12px;border-bottom:1px solid var(--line)}
   .tabs button{padding:11px 8px 9px;min-width:0}
   .desktop-label{display:none}.mobile-label{display:inline}
