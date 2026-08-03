@@ -205,3 +205,21 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   .editing .check-cell input{width:20px;height:20px}
   .editing .remove-item{display:block}
 }
+
+/* Current trip operations belong to the detail header, not the trip switcher. */
+.progress{display:none}
+body[data-tab="packing"] .progress{display:block}
+.desktop-toolbar{grid-template-columns:minmax(0,1fr) auto;margin-bottom:18px}
+.trip-heading{min-width:0}
+.trip-actions{position:static;z-index:12;display:flex;justify-self:end;align-items:flex-start;margin-left:0}
+.trip-switcher nav button{padding-right:12px}
+.toolbar-menu .menu-panel{top:calc(100% + 7px)}
+@media print{.trip-actions{display:none!important}}
+@media(max-width:680px){
+  .desktop-toolbar,body[data-tab="packing"] .desktop-toolbar{display:flex;justify-content:flex-end;min-height:38px;margin:0 0 7px}
+  .desktop-toolbar .trip-heading{display:none}
+  .desktop-toolbar .trip-actions{position:static;display:flex;margin:0}
+  .desktop-toolbar .trip-actions .menu summary{height:38px;min-width:40px}
+  .desktop-toolbar .trip-actions .menu-panel{right:0;width:168px}
+  body[data-tab="packing"] .progress{display:block;margin:0 0 14px}
+}
