@@ -567,9 +567,29 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'139 0000 0000','logged-in copy should use the full emergency phone');
 
   await page.locator('#tabs [data-tab="reading"]').click();
-  assert.equal(await page.locator('.reading-card').count(),2,'normalization should keep existing readings and the default source reading');
+  assert.equal(await page.locator('.reading-card').count(),3,'normalization should keep existing readings and all default source readings');
+  assert.deepEqual(await page.locator('.reading-card strong').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['马王堆《老子》帛书及相关考古发现','岳麓书院：千年学府与中国知识传统','测试旅读'],'default readings should render before custom readings and keep 岳麓书院 second');
+  const readingListLayout=await page.evaluate(()=>{
+    const rect=selector=>{
+      const box=document.querySelector(selector).getBoundingClientRect();
+      return {x:box.x,y:box.y,width:box.width,height:box.height};
+    };
+    return {
+      tabs:rect('.tabs'),
+      firstCard:rect('.reading-card'),
+      moduleBarDisplay:getComputedStyle(document.querySelector('.module-bar')).display
+    };
+  });
+  assert.equal(readingListLayout.moduleBarDisplay,'none','reading list should remove the duplicate 旅读 title');
+  assert.ok(readingListLayout.firstCard.y>=readingListLayout.tabs.y+readingListLayout.tabs.height,'reading list cards should start below tabs');
+  assert.ok(readingListLayout.firstCard.y-(readingListLayout.tabs.y+readingListLayout.tabs.height)<=10,'reading list has too much blank space after tabs');
+  assert.ok(Math.abs(readingListLayout.firstCard.x-readingListLayout.tabs.x)<=1,'reading list cards should align with tabs');
+  await page.screenshot({path:join(root,'docs/evidence/reading-list-desktop.png'),fullPage:true});
   const mawangduiCard=page.locator('.reading-card').filter({hasText:'马王堆《老子》帛书及相关考古发现'});
   assert.equal(await mawangduiCard.locator('small').textContent(),'湖南博物院');
+  const yueluCard=page.locator('.reading-card').filter({hasText:'岳麓书院：千年学府与中国知识传统'});
+  assert.equal(await yueluCard.locator('span').textContent(),'历史文献');
+  assert.equal(await yueluCard.locator('small').textContent(),'岳麓书院');
   await mawangduiCard.click();
   await page.waitForSelector('.markdown-body table');
   assert.equal(await page.locator('.reading-head h2').textContent(),'马王堆《老子》帛书及相关考古发现');
@@ -581,13 +601,42 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.ok(await page.locator('.markdown-body hr').count()>0,'markdown horizontal rules should render');
   assert.ok(await page.locator('.markdown-table-scroll table').count()>0,'markdown tables should render in scroll wrappers');
   assert.equal(await page.evaluate(()=>document.querySelector('.markdown-body script')===null),true,'markdown must not create script elements');
+  await page.screenshot({path:join(root,'docs/evidence/reading-desktop.png'),fullPage:true});
+  await page.locator('.reading-back').click();
+  await page.locator('.reading-card').filter({hasText:'岳麓书院：千年学府与中国知识传统'}).click();
+  await page.waitForSelector('.markdown-body table');
+  assert.equal(await page.locator('.reading-head h2').textContent(),'岳麓书院：千年学府与中国知识传统');
+  assert.equal(await page.locator('.reading-head p').textContent(),'岳麓书院');
+  assert.ok(await page.getByText('宋代著名书院很多，“天下四大书院”的名单在不同文献和不同地方叙述中并不完全一致。').count()>0,'岳麓 article should include the corrected four-academies caveat');
+  assert.ok(await page.getByText('两人讲学论道两月有余').count()>0,'岳麓 article should include the corrected 朱张会讲 duration');
+  assert.ok(await page.getByText('古代书院 -> 近代学校 -> 现代大学').count()>0,'岳麓 article should render the ASCII transition line');
+  assert.ok(await page.locator('.markdown-body strong').filter({hasText:'千年学府'}).count()>0,'markdown strong text should render inside the 岳麓 article');
+  assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'经世致用'}).count()>0,'岳麓 article tables should render');
+  assert.ok(await page.getByText('资料说明').count()>0,'岳麓 article should include source notes');
   await page.close();
   await context.close();
 
   page=await browser.newPage({viewport:{width:390,height:844}});
   await page.goto(base);
   await page.locator('#tabs [data-tab="reading"]').click();
-  await page.locator('.reading-card').filter({hasText:'马王堆《老子》帛书及相关考古发现'}).click();
+  const mobileReadingListLayout=await page.evaluate(()=>{
+    const rect=selector=>{
+      const box=document.querySelector(selector).getBoundingClientRect();
+      return {x:box.x,y:box.y,width:box.width,height:box.height};
+    };
+    return {
+      tabs:rect('.tabs'),
+      firstCard:rect('.reading-card'),
+      moduleBarDisplay:getComputedStyle(document.querySelector('.module-bar')).display,
+      pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth
+    };
+  });
+  assert.equal(mobileReadingListLayout.moduleBarDisplay,'none','mobile reading list should remove the duplicate 旅读 title');
+  assert.ok(mobileReadingListLayout.firstCard.y-mobileReadingListLayout.tabs.y-mobileReadingListLayout.tabs.height<=10,'mobile reading list has too much blank space after tabs');
+  assert.ok(Math.abs(mobileReadingListLayout.firstCard.x-mobileReadingListLayout.tabs.x)<=1,'mobile reading list cards should align with tabs');
+  assert.equal(mobileReadingListLayout.pageOverflow,false,'mobile reading list should not overflow horizontally');
+  await page.screenshot({path:join(root,'docs/evidence/reading-list-mobile.png'),fullPage:true});
+  await page.locator('.reading-card').filter({hasText:'岳麓书院：千年学府与中国知识传统'}).click();
   await page.waitForSelector('.markdown-body table');
   const tableMetrics=await page.locator('.markdown-table-scroll').first().evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}));
   assert.ok(tableMetrics.scrollWidth>tableMetrics.clientWidth,'narrow markdown tables should scroll inside their own wrapper');
