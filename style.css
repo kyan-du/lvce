@@ -6,3 +6,11 @@
 @media print{html,body{width:277mm;background:#fff;color:#111;font-size:9pt}header,aside,.actions,.edit-only,.tabs,.privacy-note,.copy-value,#toast{display:none!important}main{display:block;min-height:0}.workspace{width:100%;padding:0}.toolbar{display:block;margin:0 0 5mm}.toolbar #tripName{font-size:18pt}.toolbar #tripMeta{font-size:9pt}.progress{display:none}.categories{grid-template-columns:repeat(3,minmax(0,1fr));gap:3mm}.card{box-shadow:none;break-inside:avoid;page-break-inside:avoid}.item{min-height:6mm;font-size:8pt}.card-head{height:8mm}.column-head span,.item>*{padding:1mm}.table-block{margin:0 0 4mm;break-inside:auto}.section-title{margin-bottom:2mm}.section-title h2{font-size:12pt}.data-scroll{overflow:visible}.data-table{width:100%;min-width:0!important;table-layout:fixed}.data-table th,.data-table td{min-width:0!important;font-size:7.5pt!important;line-height:1.25;padding:1.2mm!important;overflow-wrap:anywhere!important;word-break:break-word}.cell-view{min-width:0}.booking-grid{display:block}.booking-grid .table-block{break-inside:avoid;page-break-inside:avoid}.data-table tr.today td{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4 landscape;margin:10mm}}
 @media(max-width:680px){body{overflow-x:hidden}header{height:auto;min-height:125px;gap:12px;flex-wrap:wrap}header>div:last-child{display:flex;max-width:100%;gap:5px;overflow-x:auto;padding-bottom:3px}header>div:last-child button{flex:none}.data-scroll{max-width:100%}}
 @media(max-width:680px){html{overflow-x:hidden}#toast{width:max-content;max-width:calc(100vw - 28px);text-align:center}}
+
+/* Trip creation and duplication belong together; account exit stays separate. */
+.trip-actions{display:flex;gap:5px}.aside-title .trip-actions button{white-space:nowrap}.aside-title .trip-actions .primary{padding-inline:9px}
+.account-bar{position:fixed;bottom:14px;left:18px;width:184px;color:var(--muted);font-size:11px}
+.account-bar>span{display:block;margin-bottom:7px}
+.account-bar #logout{padding:3px 0;border:0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}
+.account-bar #logout:hover{color:var(--ink)}
+@media(max-width:680px){.account-bar{position:static;width:auto;display:flex;justify-content:space-between;align-items:center;padding:8px 0 0}.storage-note{display:none}}
