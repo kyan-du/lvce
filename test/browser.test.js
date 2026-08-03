@@ -68,21 +68,31 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     assert.equal(await page.locator('tr.today').count(),1);
     assert.equal(await page.locator('#logout .logout-icon').count(),1,'logout icon is missing');
     assert.equal(await page.locator('.aside-title #newTrip').evaluate(el=>getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'),true,`${name} new trip action is not visible`);
-    assert.equal(await page.locator('aside .trip-actions').count(),0,'active trip menu must not stay in the switcher');
     assert.equal(await page.locator('.trip-actions').count(),1,'active trip menu must appear once');
     assert.equal(await page.locator('.trip-actions .menu-panel #newTrip').count(),0,'new trip must not be inside active trip menu');
     await assertProgressHidden(page,`${name} itinerary`);
     await page.locator('summary[aria-label="更多操作"]').click();
     assert.equal(await page.locator('.trip-actions .menu-panel button').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim()).join('|')),'复制当前旅行|打印|删除旅行','active trip menu contains non-trip actions');
-    const menuBox=await page.locator('.trip-actions .menu-panel').boundingBox(),toolbarBox=await page.locator('.desktop-toolbar').boundingBox(),viewportSize=page.viewportSize();
-    assert.ok(menuBox&&toolbarBox,'active trip menu is not visible');
+    const menuBox=await page.locator('.trip-actions .menu-panel').boundingBox(),summaryBox=await page.locator('.trip-actions summary').boundingBox(),viewportSize=page.viewportSize();
+    assert.ok(menuBox&&summaryBox,'active trip menu is not visible');
     assert.equal(menuBox.x+menuBox.width<=viewportSize.width,true,`${name} menu overflows viewport`);
     if(viewport.width>680){
-      assert.ok(menuBox.x>=toolbarBox.x+toolbarBox.width/2,`${name} menu is not in the detail header right side`);
+      const toolbarBox=await page.locator('.desktop-toolbar').boundingBox();
+      assert.ok(toolbarBox,'desktop/tablet detail header toolbar is missing');
+      assert.equal(await page.locator('.desktop-toolbar .trip-actions').count(),1,`${name} active trip menu is not in the detail toolbar`);
+      assert.equal(await page.locator('.trip-switcher .trip-actions').count(),0,`${name} active trip menu stayed in the trip switcher`);
+      assert.ok(summaryBox.y>=toolbarBox.y&&summaryBox.y<=toolbarBox.y+toolbarBox.height,`${name} menu trigger is not aligned to the detail header`);
+      assert.ok(summaryBox.x>=toolbarBox.x+toolbarBox.width/2,`${name} menu trigger is not in the detail header right side`);
+      assert.ok(menuBox.x>=toolbarBox.x+toolbarBox.width/2,`${name} menu panel is not in the detail header right side`);
     }else{
-      const summaryBox=await page.locator('.trip-actions summary').boundingBox(),tabsBox=await page.locator('.tabs').boundingBox();
-      assert.equal(await page.locator('.desktop-toolbar .trip-heading').evaluate(el=>getComputedStyle(el).display),'none','mobile repeats current trip heading');
-      assert.ok(summaryBox&&tabsBox&&summaryBox.y<tabsBox.y,'mobile trip actions are not a compact top-level entry');
+      const tripBox=await page.locator('.trip-switcher nav button.active').boundingBox(),switcherBox=await page.locator('.trip-switcher').boundingBox(),tabsBox=await page.locator('.tabs').boundingBox(),workspaceBox=await page.locator('.workspace').boundingBox();
+      assert.equal(await page.locator('.trip-switcher .trip-actions').count(),1,`${name} active trip menu is not in the trip switcher`);
+      assert.equal(await page.locator('.desktop-toolbar').boundingBox(),null,'mobile detail toolbar creates a standalone action row');
+      assert.ok(tripBox&&switcherBox&&tabsBox&&workspaceBox,'mobile compact trip header is incomplete');
+      assert.ok(summaryBox.x>=tripBox.x+tripBox.width-summaryBox.width-12&&summaryBox.x+summaryBox.width<=tripBox.x+tripBox.width,`${name} trip actions are not inside the active trip card right edge`);
+      assert.ok(summaryBox.y>=tripBox.y&&summaryBox.y+summaryBox.height<=tripBox.y+tripBox.height,`${name} trip actions are not inside the active trip card`);
+      assert.ok(switcherBox.height-tripBox.height<=2,`${name} trip actions create a standalone row in the switcher`);
+      assert.ok(tabsBox.y-workspaceBox.y<=1,`${name} trip actions create blank space before tabs`);
     }
     await page.locator('summary[aria-label="更多操作"]').click();
     await assertTripMenuDismissal(page,name);

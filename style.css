@@ -207,19 +207,21 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
 }
 
 /* Current trip operations belong to the detail header, not the trip switcher. */
+main{position:relative}
 .progress{display:none}
 body[data-tab="packing"] .progress{display:block}
-.desktop-toolbar{grid-template-columns:minmax(0,1fr) auto;margin-bottom:18px}
+.desktop-toolbar{grid-template-columns:minmax(0,1fr);margin-bottom:18px;padding-right:50px}
 .trip-heading{min-width:0}
-.trip-actions{position:static;z-index:12;display:flex;justify-self:end;align-items:flex-start;margin-left:0}
+.trip-actions{position:absolute;z-index:12;top:28px;right:3vw;display:flex;align-items:flex-start;margin-left:0}
 .trip-switcher nav button{padding-right:12px}
 .toolbar-menu .menu-panel{top:calc(100% + 7px)}
 @media print{.trip-actions{display:none!important}}
 @media(max-width:680px){
-  .desktop-toolbar,body[data-tab="packing"] .desktop-toolbar{display:flex;justify-content:flex-end;min-height:38px;margin:0 0 7px}
-  .desktop-toolbar .trip-heading{display:none}
-  .desktop-toolbar .trip-actions{position:static;display:flex;margin:0}
-  .desktop-toolbar .trip-actions .menu summary{height:38px;min-width:40px}
-  .desktop-toolbar .trip-actions .menu-panel{right:0;width:168px}
+  .desktop-toolbar,body[data-tab="packing"] .desktop-toolbar{display:none}
+  .trip-switcher{position:relative;display:block;overflow:visible}
+  .trip-switcher nav button{padding-right:58px}
+  .trip-switcher .trip-actions{position:absolute;z-index:2;right:7px;top:7px;display:flex;margin:0;align-items:stretch}
+  .trip-switcher .trip-actions .menu summary{height:40px;min-width:40px;border:1px solid var(--line);background:#fff}
+  .trip-switcher .trip-actions .menu-panel{right:0;width:168px}
   body[data-tab="packing"] .progress{display:block;margin:0 0 14px}
 }
