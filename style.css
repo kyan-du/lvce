@@ -128,6 +128,8 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   .table-block{margin-bottom:18px}
 }
 
+.mobile-check,.item-qty{display:none}
+
 @media(max-width:680px){
   /* The switcher already identifies the current trip; do not repeat it below. */
   .toolbar>div:first-child{display:none}
