@@ -80,3 +80,23 @@ header #logout{align-self:flex-start;border:1px solid #ffffff55;background:#ffff
 header #logout:hover{border-color:#fff;background:#ffffff20}
 .account-bar{width:184px}
 @media(max-width:680px){header{position:relative;padding-right:88px}header #logout{position:absolute;right:14px;top:16px}.account-bar{width:auto}.account-bar>span{font-size:11px}}
+
+/* Keep primary actions visible; tuck infrequent and destructive actions away. */
+.menu{position:relative}
+.menu summary{list-style:none;display:grid;place-items:center;min-width:38px;height:38px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--muted);cursor:pointer;letter-spacing:2px;user-select:none}
+.menu summary::-webkit-details-marker{display:none}
+.menu[open] summary{border-color:var(--green);color:var(--green)}
+.menu-panel{position:absolute;z-index:12;right:0;top:calc(100% + 6px);width:176px;padding:6px;border:1px solid var(--line);border-radius:11px;background:#fff;box-shadow:0 12px 35px #203b3026}
+.menu-panel button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:9px 10px;border-radius:7px;white-space:nowrap}
+.menu-panel button:hover{background:var(--pale)}
+.menu-panel .danger{color:#a24b43}
+.menu-separator{height:1px;margin:5px;background:var(--line)}
+.toolbar-menu .menu-panel{top:calc(100% + 7px)}
+@media(max-width:680px){
+  .actions{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-top:13px}
+  .actions>button{min-width:72px;padding:8px 16px}
+  .actions .menu summary{height:38px}
+  .trip-actions{align-items:center}
+  .trip-actions .menu summary{height:32px;min-width:34px;font-size:12px}
+  .menu-panel{width:168px}
+}
