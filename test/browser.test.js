@@ -17,7 +17,7 @@ function shanghaiDate(date=new Date()){
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 const today=shanghaiDate();
-const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'09:00','今日活动','地点','联系人','备注'],[today,'10:00','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'09:00','今日活动','地点','联系人','备注'],[today,'10:00','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
 function pngSize(buffer){
   assert.equal(buffer.toString('ascii',1,4),'PNG','asset is not a PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20),colorType:buffer[25]};
@@ -174,6 +174,8 @@ async function assertHeaderLogo(page,name){
   assert.equal(await logo.count(),1,`${name} should render one header logo`);
   assert.equal(await logo.getAttribute('alt'),'LVCE logo',`${name} logo alt text is incorrect`);
   assert.equal(await logo.getAttribute('src'),'/assets/lvce-logo-4e7ee0e9.png',`${name} logo should use the cache-busted asset`);
+  assert.equal(await page.locator('header .eyebrow').count(),0,`${name} should not render the removed English eyebrow`);
+  assert.equal(await page.locator('header').textContent().then(text=>text.includes('TRAVEL PLANNER')),false,`${name} should not include the old English eyebrow copy`);
   const metrics=await page.evaluate(()=>{
     const rect=selector=>{
       const r=document.querySelector(selector).getBoundingClientRect();
@@ -182,11 +184,11 @@ async function assertHeaderLogo(page,name){
     return {
       header:rect('header'),
       brand:rect('header .brand'),
-      eyebrow:rect('header .eyebrow'),
       logo:rect('header .brand-logo'),
       title:rect('header h1'),
       subtitle:rect('#subtitle'),
       brandLine:rect('header .brand-line'),
+      brandCopy:rect('header .brand-copy'),
       main:rect('main'),
       workspace:rect('.workspace'),
       aside:document.querySelector('aside')?rect('aside'):null,
@@ -201,14 +203,16 @@ async function assertHeaderLogo(page,name){
   const targetLeft=metrics.workspace.left+metrics.workspacePaddingLeft;
   assert.equal(metrics.logo.width,metrics.logo.height,`${name} logo should keep a square box without distortion`);
   assert.ok(Math.abs(metrics.brand.left-targetLeft)<=1,`${name} brand left edge does not align with the page content`);
-  assert.ok(Math.abs(metrics.brand.left-metrics.eyebrow.left)<=1,`${name} eyebrow is not left-aligned with the brand`);
-  assert.ok(Math.abs(metrics.brand.left-metrics.brandLine.left)<=1,`${name} logo and title group is not left-aligned with the brand`);
-  assert.ok(Math.abs(metrics.brand.left-metrics.subtitle.left)<=1,`${name} subtitle is not left-aligned with the brand`);
-  assert.ok(Math.abs(metrics.logo.centerY-metrics.brandLine.centerY)<=1,`${name} logo is not visually centered in the brand line`);
-  assert.ok(Math.abs(metrics.logo.centerY-metrics.title.centerY)<=1,`${name} logo is not vertically centered with the title`);
-  assert.ok(metrics.logo.right<metrics.title.left,`${name} logo should sit to the left of the title`);
-  assert.ok(metrics.title.left-metrics.logo.right>=11&&metrics.title.left-metrics.logo.right<=16,`${name} logo/title gap should stay near 12-16px`);
-  assert.ok(metrics.subtitle.left>=metrics.brand.left-1&&metrics.subtitle.right<=metrics.brand.right+1,`${name} subtitle overflows the brand container`);
+  assert.ok(Math.abs(metrics.brand.left-metrics.brandLine.left)<=1,`${name} brand line is not left-aligned with the brand`);
+  assert.ok(Math.abs(metrics.logo.left-metrics.brandLine.left)<=1,`${name} logo column is not the left edge of the brand line`);
+  assert.ok(metrics.logo.right<metrics.brandCopy.left,`${name} logo should occupy the left column before the text stack`);
+  const logoCopyGap=metrics.brandCopy.left-metrics.logo.right;
+  assert.ok(logoCopyGap>=9&&logoCopyGap<=20,`${name} logo/text gap should stay balanced`);
+  assert.ok(Math.abs(metrics.title.left-metrics.subtitle.left)<=1,`${name} title and subtitle are not left-aligned in the text stack`);
+  assert.ok(metrics.title.top<metrics.subtitle.top,`${name} title should stack above the subtitle`);
+  assert.ok(metrics.brandCopy.left>=metrics.logo.right+9,`${name} text stack is crowding the logo column`);
+  assert.ok(metrics.subtitle.left>=metrics.brandCopy.left-1&&metrics.subtitle.right<=metrics.brandLine.right+1,`${name} subtitle overflows the brand line`);
+  assert.ok(metrics.logo.height>=44,`${name} header logo should remain visually prominent`);
   assert.ok(Math.abs(metrics.header.bottom-metrics.main.top)<=0.5,`${name} header and page body do not meet cleanly`);
   assert.equal(metrics.headerBottomElement,'HEADER',`${name} header bottom is not fully painted by the header`);
   if(metrics.mobileAsideBorderRight!==null)assert.equal(metrics.mobileAsideBorderRight,'0px',`${name} mobile header area shows a vertical aside rule`);
@@ -565,10 +569,13 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.equal((await privatePhoneCell.textContent()).replace('复制','').trim(),'139 0000 0000','logged-in app should show the full emergency phone');
   await page.locator('.booking-grid .table-block').last().locator('button[aria-label="复制电话"]').click();
   assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'139 0000 0000','logged-in copy should use the full emergency phone');
+  const legacyPrivatePhoneCell=page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').nth(1);
+  assert.equal((await legacyPrivatePhoneCell.textContent()).trim(),'待补全完整号码','logged-in app should not render a masked-only emergency phone as if it were complete');
+  assert.equal(await legacyPrivatePhoneCell.locator('button[aria-label="复制电话"]').count(),0,'logged-in copy should not copy masked-only emergency phones');
 
   await page.locator('#tabs [data-tab="reading"]').click();
-  assert.equal(await page.locator('.reading-card').count(),3,'normalization should keep existing readings and all default source readings');
-  assert.deepEqual(await page.locator('.reading-card strong').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['马王堆《老子》帛书及相关考古发现','岳麓书院：千年学府与中国知识传统','测试旅读'],'default readings should render before custom readings and keep 岳麓书院 second');
+  assert.equal(await page.locator('.reading-card').count(),4,'normalization should keep existing readings and all default source readings');
+  assert.deepEqual(await page.locator('.reading-card strong').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['马王堆《老子》帛书及相关考古发现','岳麓书院：千年学府与中国知识传统','橘子洲：湘江中的千年洲岛与长沙文化地标','测试旅读'],'default readings should render before custom readings and keep 橘子洲 third');
   const readingListLayout=await page.evaluate(()=>{
     const rect=selector=>{
       const box=document.querySelector(selector).getBoundingClientRect();
@@ -590,10 +597,48 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   const yueluCard=page.locator('.reading-card').filter({hasText:'岳麓书院：千年学府与中国知识传统'});
   assert.equal(await yueluCard.locator('span').textContent(),'历史文献');
   assert.equal(await yueluCard.locator('small').textContent(),'岳麓书院');
+  const juzizhouCard=page.locator('.reading-card').filter({hasText:'橘子洲：湘江中的千年洲岛与长沙文化地标'});
+  assert.equal(await juzizhouCard.locator('span').textContent(),'历史文献');
+  assert.equal(await juzizhouCard.locator('small').textContent(),'橘子洲');
   await mawangduiCard.click();
   await page.waitForSelector('.markdown-body table');
+  assert.equal(await page.locator('.reading-back').textContent(),'← 返回文章列表');
+  assert.equal(await page.getByRole('button',{name:'返回旅读'}).count(),0,'old stroked reading back button label should be removed');
+  assert.equal(await page.locator('.module-bar').boundingBox(),null,'reading detail should not show the duplicate module title');
   assert.equal(await page.locator('.reading-head h2').textContent(),'马王堆《老子》帛书及相关考古发现');
   assert.equal(await page.locator('.reading-head p').textContent(),'湖南博物院');
+  const readingLayout=await page.evaluate(()=>{
+    const rect=selector=>{
+      const box=document.querySelector(selector).getBoundingClientRect();
+      return {x:box.x,y:box.y,width:box.width,height:box.height};
+    };
+    const back=document.querySelector('.reading-back'),backStyle=getComputedStyle(back);
+    return {
+      tabs:rect('.tabs'),
+      back:rect('.reading-back'),
+      category:rect('.reading-head span'),
+      title:rect('.reading-head h2'),
+      venue:rect('.reading-head p'),
+      body:rect('.markdown-body > :first-child'),
+      backStyle:{
+        borderTopWidth:backStyle.borderTopWidth,
+        backgroundColor:backStyle.backgroundColor,
+        paddingLeft:backStyle.paddingLeft
+      }
+    };
+  });
+  assert.ok(readingLayout.back.y>=readingLayout.tabs.y+readingLayout.tabs.height, 'reading return link should sit directly below tabs');
+  assert.ok(readingLayout.back.y-(readingLayout.tabs.y+readingLayout.tabs.height)<=18, 'reading detail has too much blank space after tabs');
+  assert.ok(readingLayout.category.y>readingLayout.back.y, 'reading category should follow the return link');
+  assert.ok(readingLayout.title.y>readingLayout.category.y, 'reading title should follow the category');
+  assert.ok(readingLayout.venue.y>readingLayout.title.y, 'reading venue should follow the article title');
+  assert.ok(readingLayout.body.y>readingLayout.venue.y, 'reading body should follow the venue');
+  for(const [label,box] of [['back',readingLayout.back],['category',readingLayout.category],['title',readingLayout.title],['venue',readingLayout.venue],['body',readingLayout.body]]){
+    assert.ok(Math.abs(box.x-readingLayout.tabs.x)<=1,`reading ${label} left edge should align with tabs`);
+  }
+  assert.equal(readingLayout.backStyle.borderTopWidth,'0px','reading return should render as a text link without stroke');
+  assert.equal(readingLayout.backStyle.backgroundColor,'rgba(0, 0, 0, 0)','reading return should not use a filled button background');
+  assert.equal(readingLayout.backStyle.paddingLeft,'0px','reading return should not keep button padding');
   assert.ok(await page.locator('.markdown-body h2').count()>0,'markdown headings should render');
   assert.ok(await page.locator('.markdown-body ul li').count()>0,'markdown lists should render');
   assert.ok(await page.locator('.markdown-body blockquote').count()>0,'markdown quotes should render');
@@ -613,6 +658,17 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.ok(await page.locator('.markdown-body strong').filter({hasText:'千年学府'}).count()>0,'markdown strong text should render inside the 岳麓 article');
   assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'经世致用'}).count()>0,'岳麓 article tables should render');
   assert.ok(await page.getByText('资料说明').count()>0,'岳麓 article should include source notes');
+  await page.locator('.reading-back').click();
+  await juzizhouCard.click();
+  await page.waitForSelector('.markdown-body table');
+  assert.equal(await page.locator('.reading-head h2').textContent(),'橘子洲：湘江中的千年洲岛与长沙文化地标');
+  assert.equal(await page.locator('.reading-head p').textContent(),'橘子洲');
+  assert.ok(await page.getByText('它南北绵延约 5 公里').count()>0,'橘子洲 article should include corrected island length');
+  assert.ok(await page.getByText('湘水之北径南津城西，西对橘洲。').count()>0,'橘子洲 article should include the 水经注 citation');
+  assert.ok(await page.getByText('1925年青年时期的毛泽东形象').count()>0,'橘子洲 article should identify the sculpture as young Mao in 1925');
+  assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'青年理想、时代思潮与历史转折'}).count()>0,'橘子洲 article tables should render');
+  assert.ok(await page.locator('.markdown-body pre code').filter({hasText:'橘子洲地铁站'}).count()>0,'橘子洲 article route code block should render');
+  assert.equal(await page.getByText('contentReference').count(),0,'橘子洲 article should not contain contentReference residue');
   await page.close();
   await context.close();
 
@@ -641,14 +697,36 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   const tableMetrics=await page.locator('.markdown-table-scroll').first().evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}));
   assert.ok(tableMetrics.scrollWidth>tableMetrics.clientWidth,'narrow markdown tables should scroll inside their own wrapper');
   assert.equal(tableMetrics.pageOverflow,false,'reading page should not overflow horizontally on mobile');
+  const mobileReadingLayout=await page.evaluate(()=>{
+    const rect=selector=>{
+      const box=document.querySelector(selector).getBoundingClientRect();
+      return {x:box.x,y:box.y,width:box.width,height:box.height};
+    };
+    return {
+      tabs:rect('.tabs'),
+      back:rect('.reading-back'),
+      category:rect('.reading-head span'),
+      title:rect('.reading-head h2'),
+      venue:rect('.reading-head p'),
+      body:rect('.markdown-body > :first-child'),
+      moduleBarDisplay:getComputedStyle(document.querySelector('.module-bar')).display
+    };
+  });
+  assert.equal(mobileReadingLayout.moduleBarDisplay,'none','mobile reading detail should remove the duplicate 旅读 title');
+  assert.ok(mobileReadingLayout.back.y-mobileReadingLayout.tabs.y-mobileReadingLayout.tabs.height<=14,'mobile reading detail has too much blank space after tabs');
+  assert.ok(mobileReadingLayout.category.y>mobileReadingLayout.back.y&&mobileReadingLayout.title.y>mobileReadingLayout.category.y&&mobileReadingLayout.venue.y>mobileReadingLayout.title.y&&mobileReadingLayout.body.y>mobileReadingLayout.venue.y,'mobile reading detail order should be return, category, title, venue, body');
+  for(const [label,box] of [['back',mobileReadingLayout.back],['category',mobileReadingLayout.category],['title',mobileReadingLayout.title],['venue',mobileReadingLayout.venue],['body',mobileReadingLayout.body]]){
+    assert.ok(Math.abs(box.x-mobileReadingLayout.tabs.x)<=1,`mobile reading ${label} left edge should align with tabs`);
+  }
+  await page.screenshot({path:join(root,'docs/evidence/reading-mobile.png'),fullPage:true});
   await page.close();
 
   page=await browser.newPage({viewport:{width:1024,height:800}});
   await page.goto(`${base}/share/${token}`);
   await page.waitForSelector('tr.today');
   await page.locator('#tabs [data-tab="bookings"]').click();
-  const publicPhone=await page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').first().textContent();
-  assert.equal(publicPhone.trim(),'139 **** 0000','public share should keep emergency phone masked');
+  const publicPhones=await page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim()));
+  assert.deepEqual(publicPhones,['139 **** 0000','186 **** 5057'],'public share should keep emergency phones masked');
   await page.close();
 });
 
