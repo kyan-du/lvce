@@ -14,3 +14,69 @@
 .account-bar #logout{padding:3px 0;border:0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}
 .account-bar #logout:hover{color:var(--ink)}
 @media(max-width:680px){.account-bar{position:static;width:auto;display:flex;justify-content:space-between;align-items:center;padding:8px 0 0}.storage-note{display:none}}
+
+/* Mobile layout: compact controls and card-based records instead of clipped tables. */
+@media(max-width:680px){
+  header{min-height:108px;padding:20px 18px}
+  header>div{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 12px}
+  header .eyebrow{flex-basis:100%;margin-bottom:3px}
+  header h1{font-size:30px;letter-spacing:.12em}
+  header p{font-size:13px}
+  aside{padding:12px 14px;background:#f4f3ef;border-bottom:1px solid var(--line)}
+  .aside-title{display:flex;margin-bottom:8px;gap:10px}
+  .aside-title>b{font-size:13px}
+  .trip-actions{margin-left:auto}
+  .trip-actions button{padding:6px 9px;font-size:12px}
+  nav{gap:7px;overflow-x:auto;padding:1px 0 5px;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{min-width:132px;padding:9px 10px;margin:0;background:#fff;border:1px solid var(--line)}
+  .account-bar{padding:6px 1px 0;gap:10px}
+  .account-bar>span{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .workspace{padding:18px 14px 42px}
+  .toolbar{display:block;margin-bottom:17px}
+  .toolbar>div:first-child{min-width:0}
+  .toolbar #tripName{font-size:24px}
+  .progress{margin-top:12px}
+  .actions{margin-top:12px;width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible}
+  .actions button{padding:7px 3px;white-space:nowrap;font-size:13px}
+  .tabs{gap:0;margin-bottom:20px;overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:1;padding:10px 12px;min-width:max-content;text-align:center}
+  .section-title h2{font-size:18px}
+  .data-scroll{overflow:visible;max-width:none}
+  .data-table,.data-table tbody,.data-table tr,.data-table td{display:block;width:100%}
+  .data-table{min-width:0;border:0;background:transparent}
+  .data-table thead{display:none}
+  .data-table tbody{display:grid;gap:12px}
+  .data-table tr{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 3px 14px #203b300c}
+  .data-table td,.data-table td:nth-child(3),.data-table td:last-child{min-width:0;border:0;border-bottom:1px solid #e8ece9;padding:8px 11px 8px 104px;position:relative;overflow-wrap:anywhere;line-height:1.45}
+  .data-table td:last-child{border-bottom:0}
+  .data-table td::before{content:attr(data-label);position:absolute;left:11px;top:8px;width:82px;color:var(--muted);font-size:12px;font-weight:600}
+  .cell-view{min-width:0}
+  .cell-edit{min-width:0;padding:5px}
+  .data-table tr.today{border:2px solid #c49b38}
+  .data-table tr.today td{background:#fffdf3;border-top:0;border-bottom:1px solid #eadfb9}
+  .data-table tr.today td:first-child::before{content:attr(data-label);margin:0;padding:0;border-radius:0;background:transparent;color:var(--muted);font-size:12px}
+  .data-table tr.today::before{content:'今天';display:block;padding:4px 11px;background:#c49b38;color:#fff;font-size:11px;font-weight:700}
+  .copy-value{float:right;margin:-1px 0 0 6px}
+  .row-action{padding-left:11px!important;text-align:right}
+  .row-action::before{display:none}
+  .row-action .remove-row{padding:5px 9px}
+  .booking-grid{gap:8px}
+  .privacy-note{font-size:12px}
+  .empty{padding:28px 12px!important;text-align:center}
+  .empty::before{display:none}
+  dialog{width:calc(100vw - 28px);max-width:420px}
+  dialog form{min-width:0;padding:20px}
+}
+@media(max-width:380px){
+  .actions{grid-template-columns:repeat(2,1fr)}
+  .data-table td,.data-table td:nth-child(3),.data-table td:last-child{padding-left:92px}
+  .data-table td::before{width:70px}
+}
+
+/* Global account action belongs in the page header. */
+header #logout{align-self:flex-start;border:1px solid #ffffff55;background:#ffffff12;color:#fff;padding:6px 10px;font-size:12px}
+header #logout:hover{border-color:#fff;background:#ffffff20}
+.account-bar{width:184px}
+@media(max-width:680px){header{position:relative;padding-right:88px}header #logout{position:absolute;right:14px;top:16px}.account-bar{width:auto}.account-bar>span{font-size:11px}}
