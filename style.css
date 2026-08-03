@@ -143,11 +143,15 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
 
 /* Mobile v2: purpose-built hierarchy instead of stacking the desktop shell. */
 .mobile-label,.module-bar{display:none}
+.brand-line{display:flex;align-items:baseline;gap:10px}.brand-line h1,.brand-line p{margin:0}.brand-icon{font-size:16px;opacity:.78}
 @media(max-width:680px){
   header{min-height:72px;height:72px;padding:13px 16px;flex-wrap:nowrap}
   header>div{display:block}
-  header .eyebrow,header #subtitle{display:none}
+  header .eyebrow{display:none}
+  header .brand-line{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
   header h1{font-size:27px;line-height:1;letter-spacing:.12em}
+  header .brand-icon{font-size:12px}
+  header #subtitle{display:block;font-size:11px;line-height:1;color:#e1ebe7;opacity:.82;letter-spacing:0}
   header #logout{top:18px;right:15px;border:0;background:transparent;padding:5px;color:#e8f0ed;font-size:12px}
   main{min-height:calc(100vh - 72px)}
   aside{padding:10px 14px;border-bottom:0;overflow:visible}
