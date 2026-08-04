@@ -11,12 +11,15 @@ body:not(.editing) .itinerary-block .section-title{display:none}.itinerary-block
 .itinerary-table tr.itinerary-group-start:not(:first-child) td{border-top:2px solid #c7d2cd}
 .itinerary-date-cell{vertical-align:middle!important;text-align:center;background:#f7faf8}
 .itinerary-date-cell .cell-view{min-width:88px;font-weight:700;color:var(--green)}
+.mobile-itinerary-date-cell{display:none}
 body.editing .itinerary-date-cell{text-align:left;background:#fff}
 @media(max-width:680px){
   .itinerary-table tr.itinerary-group-start:not(:first-child){margin-top:4px;border-top:2px solid #c7d2cd}
   .itinerary-table tr.itinerary-group-start:not(:first-child) td{border-top:0}
   .itinerary-date-cell{text-align:left;background:#f5f9f7}
   .itinerary-date-cell .cell-view{font-weight:700}
+  .mobile-itinerary-date-cell{display:block;background:#f5f9f7}
+  .mobile-itinerary-date-cell .cell-view{font-weight:700;color:var(--green)}
 }
 
 /* Trip-level actions stay with the active trip; creation is a section action. */
