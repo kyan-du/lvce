@@ -73,9 +73,9 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
       '黄兴路步行街',
       '坡子街吃东西',
       '太平街逛老街',
-      '从太平街回酒店取寄存行李',
+      '乘车回酒店取寄存行李',
       '取行李后打车前往长沙站',
-      '安检、进站与候车',
+      '安检、进站与乘车',
       'C7950 长沙→张家界西',
       '用户自定义午餐'
     ]);
@@ -86,13 +86,12 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.match(itineraryText,/五一广场→长沙IFS→黄兴路步行街→坡子街→太平街/);
     assert.match(itineraryText,/不删除后续吃东西安排/);
     assert.match(itineraryText,/不要删坡子街或太平街/);
-    assert.match(itineraryText,/15:20开始返回酒店/);
+    assert.match(itineraryText,/15:55乘车返回酒店，不要步行/);
     assert.match(itineraryText,/行李已寄存在酒店，不是办理退房/);
-    assert.match(itineraryText,/最晚15:45从酒店出发/);
-    assert.match(itineraryText,/路程超过35分钟则提前离店/);
-    assert.match(itineraryText,/目标16:15-16:25抵站/);
-    assert.match(itineraryText,/预留约30-40分钟安检进站/);
-    assert.doesNotMatch(itineraryText,/14:40-16:20|取行李并退房|16:00-16:05|50-55分钟/);
+    assert.match(itineraryText,/约15:45先查看实时路况并提前叫车/);
+    assert.match(itineraryText,/约16:05到酒店，取寄存行李即走/);
+    assert.match(itineraryText,/目标约16:35抵达长沙站/);
+    assert.doesNotMatch(itineraryText,/14:40-16:20|取行李并退房|16:00-16:05|16:15-16:25|15:20开始返回|15:30离开|30-40分钟|50-55分钟/);
     const zjjRows=rows.filter(row=>row.date>='2026-08-06').map(row=>row.activity);
     assert.deepEqual(zjjRows,[
       '天子山',
