@@ -1306,9 +1306,12 @@ test('itinerary next-item highlight follows Asia/Shanghai time without coloring 
     await page.locator('summary[aria-label="更多操作"]').click();
     await page.getByRole('button',{name:'修改',exact:true}).click();
     assert.equal(await page.locator('tr.next-itinerary,tr.today').count(),0,'edit mode must not show or mark the next itinerary item');
-    assert.equal(await page.getByText('下一件').count(),0,'edit mode must not expose a next-item label');
+    assert.equal(await page.getByText('下一程').count(),0,'edit mode must not expose a next-itinerary label');
+    assert.equal(await page.getByText('下一件').count(),0,'old next-itinerary label must not be exposed');
     await page.getByRole('button',{name:'取消',exact:true}).click();
     await assertSingleNextItinerary(page,'第一项');
+    assert.equal(await page.locator('tr.next-itinerary[aria-label="下一程"]').count(),1,'next itinerary row should use the updated accessible label');
+    assert.equal(await page.getByText('下一件').count(),0,'old next-itinerary label must not be exposed after leaving edit mode');
     let colors=await page.evaluate(()=>{
       const date=document.querySelector('td.itinerary-date-cell'),time=document.querySelector('tr.next-itinerary td[data-label="时间"]');
       return {date:getComputedStyle(date).backgroundColor,time:getComputedStyle(time).backgroundColor,rowspan:date.rowSpan};
