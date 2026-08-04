@@ -17,7 +17,28 @@ function shanghaiDate(date=new Date()){
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 const today=shanghaiDate();
-const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'09:00','今日活动','地点','联系人','备注'],[today,'10:00','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
+const defaultReadingTitles=[
+  '岳麓山：山水名胜、古寺宫亭与湖湘文化',
+  '岳麓书院：千年学府与中国知识传统',
+  '橘子洲：湘江中的千年洲岛与长沙文化地标',
+  '张家界国家森林公园：石英砂岩峰林与世界自然遗产总览',
+  '袁家界、百龙天梯与天子山：峰林地貌的观察路线',
+  '金鞭溪：峡谷溪流生态与地貌观察',
+  '天门山：天门洞、索道、地质与地方文化',
+  '猛洞河与芙蓉镇：酉水流域、土家族文化与漂流安全',
+  '马王堆《老子》帛书及相关考古发现',
+  '开福寺：长沙佛教史、建筑与参观礼仪'
+];
+const newDefaultReadings=[
+  ['yuelu-mountain','assets/readings/yuelu-mountain.md','岳麓山','麓山寺','爱晚亭'],
+  ['zhangjiajie-forest-overview','assets/readings/zhangjiajie-forest-overview.md','张家界国家森林公园','石英砂岩峰林','世界自然遗产'],
+  ['yuanjiajie-bailong-tianzishan','assets/readings/yuanjiajie-bailong-tianzishan.md','袁家界、百龙天梯与天子山','峰林地貌','百龙天梯'],
+  ['jinbianxi','assets/readings/jinbianxi.md','金鞭溪','峡谷溪流生态','金鞭岩'],
+  ['tianmen-mountain','assets/readings/tianmen-mountain.md','天门山','天门洞','索道'],
+  ['mengdong-river-furong-town','assets/readings/mengdong-river-furong-town.md','猛洞河与芙蓉镇','区域背景','不声称行程已经安排芙蓉镇游览'],
+  ['kaifu-temple','assets/readings/kaifu-temple.md','开福寺','长沙佛教史','参观礼仪']
+];
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
 function pngSize(buffer){
   assert.equal(buffer.toString('ascii',1,4),'PNG','asset is not a PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20),colorType:buffer[25]};
@@ -130,6 +151,34 @@ test('Orange Isle reading keeps Qinyuanchun guide original and excerpt-limited',
     .filter(fragment=>markdown.includes(fragment))
     .reduce((sum,fragment)=>sum+fragment.length,0);
   assert.ok(quotedChars<=90,`《沁园春·长沙》短摘总量应不超过90个汉字，当前 ${quotedChars}`);
+});
+
+test('default reading registry follows itinerary order and source markdown is clean',async()=>{
+  const app=await readFile(join(root,'app.js'),'utf8');
+  const registry=Function(`return ${app.match(/const defaultReadings=(\[.*?\]);/s)[1]}`)();
+  assert.equal(registry.length,10,'湘行记 should expose ten default readings after adding the remaining real sights');
+  assert.deepEqual(registry.map(reading=>reading.title),defaultReadingTitles,'default readings should follow the trip order');
+  assert.deepEqual(registry.map(reading=>reading.source),[
+    '/assets/readings/yuelu-mountain.md',
+    '/assets/readings/yuelu-academy.md',
+    '/assets/readings/orange-isle.md',
+    '/assets/readings/zhangjiajie-forest-overview.md',
+    '/assets/readings/yuanjiajie-bailong-tianzishan.md',
+    '/assets/readings/jinbianxi.md',
+    '/assets/readings/tianmen-mountain.md',
+    '/assets/readings/mengdong-river-furong-town.md',
+    '/assets/readings/mawangdui-laozi.md',
+    '/assets/readings/kaifu-temple.md'
+  ]);
+  for(const [id,file,h1,...phrases] of newDefaultReadings){
+    const reading=registry.find(item=>item.id===id);
+    assert.ok(reading,`${id} should be registered`);
+    const md=await readFile(join(root,file),'utf8');
+    assert.match(md,new RegExp(`^# ${h1.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}`),`${file} should start with its key title`);
+    assert.match(md,/## 资料来源/,`${file} should include a source section`);
+    assert.doesNotMatch(md,/contentReference/,`${file} should not contain contentReference residue`);
+    for(const phrase of phrases)assert.ok(md.includes(phrase),`${file} should mention ${phrase}`);
+  }
 });
 
 async function assertLoginLogo(page,name,{desktop=false}={}){
@@ -598,8 +647,8 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.equal(await legacyPrivatePhoneCell.locator('button[aria-label="复制电话"]').count(),0,'logged-in copy should not copy masked-only emergency phones');
 
   await page.locator('#tabs [data-tab="reading"]').click();
-  assert.equal(await page.locator('.reading-card').count(),4,'normalization should keep existing readings and all default source readings');
-  assert.deepEqual(await page.locator('.reading-card strong').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['马王堆《老子》帛书及相关考古发现','岳麓书院：千年学府与中国知识传统','橘子洲：湘江中的千年洲岛与长沙文化地标','测试旅读'],'default readings should render before custom readings and keep 橘子洲 third');
+  assert.equal(await page.locator('.reading-card').count(),11,'normalization should keep existing readings and all default source readings');
+  assert.deepEqual(await page.locator('.reading-card strong').evaluateAll(nodes=>nodes.map(n=>n.textContent)),[...defaultReadingTitles,'测试旅读'],'default readings should render before custom readings and follow the trip order');
   const readingListLayout=await page.evaluate(()=>{
     const rect=selector=>{
       const box=document.querySelector(selector).getBoundingClientRect();
@@ -697,6 +746,18 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'青年理想、时代思潮与历史转折'}).count()>0,'橘子洲 article tables should render');
   assert.ok(await page.locator('.markdown-body pre code').filter({hasText:'橘子洲地铁站'}).count()>0,'橘子洲 article route code block should render');
   assert.equal(await page.getByText('contentReference').count(),0,'橘子洲 article should not contain contentReference residue');
+  await page.locator('.reading-back').click();
+  for(const [,file,title,...phrases] of newDefaultReadings){
+    const card=page.locator('.reading-card').filter({hasText:title});
+    await card.click();
+    await page.waitForSelector('.markdown-body h2');
+    assert.equal(await page.locator('.reading-head h2').textContent(),defaultReadingTitles.find(x=>x.startsWith(title))||title,`${file} should load through the reading UI`);
+    assert.ok(await page.locator('.markdown-body').getByText('资料来源').count()>0,`${file} should render its source section`);
+    assert.equal(await page.getByText('contentReference').count(),0,`${file} should not render contentReference residue`);
+    const bodyText=await page.locator('.markdown-body').textContent();
+    for(const phrase of phrases)assert.ok(bodyText.includes(phrase),`${file} should render ${phrase}`);
+    await page.locator('.reading-back').click();
+  }
   await page.close();
   await context.close();
 
@@ -749,6 +810,12 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
     assert.ok(Math.abs(box.x-mobileReadingLayout.tabs.x)<=1,`mobile reading ${label} left edge should align with tabs`);
   }
   await page.screenshot({path:join(root,'docs/evidence/reading-mobile.png'),fullPage:true});
+  await page.locator('.reading-back').click();
+  await page.locator('.reading-card').filter({hasText:'张家界国家森林公园：石英砂岩峰林与世界自然遗产总览'}).click();
+  await page.waitForSelector('.markdown-table-scroll table');
+  const zhangjiajieTableMetrics=await page.locator('.markdown-table-scroll').first().evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}));
+  assert.ok(zhangjiajieTableMetrics.scrollWidth>zhangjiajieTableMetrics.clientWidth,'narrow 张家界 markdown tables should scroll inside their own wrapper');
+  assert.equal(zhangjiajieTableMetrics.pageOverflow,false,'张家界 reading page should not overflow horizontally on mobile');
   await page.close();
 
   page=await browser.newPage({viewport:{width:1024,height:800}});
