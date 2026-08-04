@@ -1221,19 +1221,18 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
       assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td[data-label="日期"]').evaluateAll(nodes=>nodes.filter(el=>getComputedStyle(el).display!=='none').length),0,'desktop repeated date cell should stay hidden after rowspan');
       assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td.mobile-itinerary-date-cell').evaluate(el=>getComputedStyle(el).display),'none','desktop mobile-only date cell must not break rowspan rendering');
       if(name==='desktop')await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-desktop-20260804.png'),fullPage:true});
-	    }else{
-	      assert.equal(await page.locator('.itinerary-block tbody tr').nth(0).locator('td[data-label="日期"]').count(),1,'mobile first same-day card should show the date');
-	      assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td[data-label="日期"]').count(),1,'mobile repeated same-day card should repeat the full date');
-	      assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,2).map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),[today,today],'mobile same-day itinerary cards should each include the full date');
-	      assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(2,4).map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),['2026-08-03','2026-08-04'],'mobile itinerary cards should keep different dates distinct');
-	      await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-mobile-20260804.png'),fullPage:true});
-	    }
-	    await page.locator('summary[aria-label="更多操作"]').click();
-	    await page.locator('#editTrip').click();
-	    assert.equal(await page.locator('.itinerary-block .mobile-itinerary-date-cell').count(),0,'editing itinerary should not render duplicate mobile-only date cells');
-	    assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing itinerary must not expose contact editors');
-	    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),2,'editing itinerary should keep one clear date editor per itinerary row');
-	    assert.equal(await page.locator('.itinerary-block textarea[aria-label="备注"]').first().inputValue(),'备注','itinerary notes editor must use row index 5');
+    }else{
+      assert.equal(await page.locator('.itinerary-block tbody tr').nth(0).locator('td[data-label="日期"]').count(),1,'mobile first same-day card should show the date');
+      assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td[data-label="日期"]').count(),1,'mobile repeated same-day card should repeat the full date');
+      assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,2).map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),[today,today],'mobile same-day itinerary cards should each include the full date');
+      await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-mobile-20260804.png'),fullPage:true});
+    }
+    await page.locator('summary[aria-label="更多操作"]').click();
+    await page.locator('#editTrip').click();
+    assert.equal(await page.locator('.itinerary-block .mobile-itinerary-date-cell').count(),0,'editing itinerary should not render duplicate mobile-only date cells');
+    assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing itinerary must not expose contact editors');
+    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),2,'editing itinerary should keep one clear date editor per itinerary row');
+    assert.equal(await page.locator('.itinerary-block textarea[aria-label="备注"]').first().inputValue(),'备注','itinerary notes editor must use row index 5');
     await page.locator('.itinerary-block .section-title button').evaluate(button=>button.click());
     await page.locator('#saveEdit').click();
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('lvce-v1')).trips[0].itinerary.at(-1).length),6,'new itinerary rows must retain the six-field storage shape');
@@ -1389,7 +1388,7 @@ test('xiangxingji August 4 itinerary keeps both taxi legs and a four-row date sp
     ['2026-08-05','预计 09:30-12:00／待预约确认','橘子洲','长沙','胡丽霞','预计上午游览']
   ];
   try{
-    const page=await browser.newPage({viewport:{width:1024,height:800}});
+    let page=await browser.newPage({viewport:{width:1024,height:800}});
     await page.goto(base);
     assert.equal(await page.locator('.itinerary-date-cell').first().evaluate(el=>el.rowSpan),4,'2026-08-04 date cell must span the four real itinerary rows');
     assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,4).map(row=>row.querySelector('td[data-label="时间"] .cell-view')?.textContent.trim())),['09:00-13:01','预计 13:15-13:30','预计 14:10-14:35','15:00-预计17:00']);
@@ -1399,6 +1398,11 @@ test('xiangxingji August 4 itinerary keeps both taxi legs and a four-row date sp
       '从酒店打车前往岳麓山+岳麓书院讲解集合点',
       '岳麓山+岳麓书院讲解'
     ],'2026-08-04 itinerary must keep the rail arrival, both taxi legs and Yuelu tour in order');
+    await page.close();
+    page=await browser.newPage({viewport:{width:390,height:844}});
+    await page.goto(base);
+    assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),['2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-05'],'mobile itinerary cards should repeat same-day dates and keep the next date distinct');
+    await page.screenshot({path:join(root,'docs/evidence','local-xiangxingji-responsive-dates-mobile-20260804.png'),fullPage:true});
     await page.close();
   }finally{
     document.trips[0].itinerary=oldItinerary;
