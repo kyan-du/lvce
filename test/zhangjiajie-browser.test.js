@@ -12,6 +12,9 @@ const browserPath=process.env.PLAYWRIGHT_CHROMIUM_PATH||(existsSync(localBrowser
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.ico':'image/x-icon','.webmanifest':'application/manifest+json'};
 
 const staleTrip={active:'zhangjiajie',tab:'itinerary',trips:[{id:'zhangjiajie',name:'湘行记',meta:'2026年8月 · 长沙／张家界',categories:[],itinerary:[
+  ['2026-08-05','09:00集合；09:30-约11:00','湖南省博物馆马王堆基本陈列馆1.5小时深度讲解（含门票代预约）','湖南省博物馆','胡丽霞','09:30场；09:00馆外集合'],
+  ['2026-08-05','12:00','用户自定义午餐','长沙','用户','保留'],
+  ['2026-08-05','16:55-18:51','C7950 长沙→张家界西','长沙／张家界西','胡丽霞','铁路（3张）；预订号 E227154531'],
   ['2026-08-06','预计 13:30-17:30／待确认','天子山','武陵源','胡丽霞','四日票含环保车'],
   ['2026-08-07','预计 08:30-11:30／待确认','金鞭溪','武陵源','胡丽霞','预计上午游览；需与 13:07 张家界西出发列车衔接核对'],
   ['2026-08-07','10:00','用户自定义补给','武陵源','用户','保留'],
@@ -61,6 +64,22 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
         return {date,activity:row.querySelector('td[data-label="活动"] .cell-view')?.textContent.trim()};
       });
     });
+    const aug5Rows=rows.filter(row=>row.date==='2026-08-05').map(row=>row.activity);
+    assert.deepEqual(aug5Rows,[
+      '湖南博物院 3 小时重点游览',
+      '打车前往五一广场',
+      '五一广场精简打卡',
+      '返回酒店取行李并退房',
+      '打车前往长沙站',
+      '进站、安检与候车缓冲',
+      'C7950 长沙→张家界西',
+      '用户自定义午餐'
+    ]);
+    assert.equal(aug5Rows.filter(name=>name==='C7950 长沙→张家界西').length,1);
+    const itineraryText=await page.locator('.itinerary-block tbody').innerText();
+    assert.match(itineraryText,/入口→马王堆汉墓陈列（重点）→辛追夫人→T型帛画→素纱襌衣/);
+    assert.match(itineraryText,/不要一进去就从一楼慢慢看/);
+    assert.match(itineraryText,/最晚14:05离开酒店/);
     const zjjRows=rows.filter(row=>row.date>='2026-08-06').map(row=>row.activity);
     assert.deepEqual(zjjRows,[
       '天子山',
