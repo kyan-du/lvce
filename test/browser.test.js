@@ -1476,21 +1476,23 @@ test('xiangxingji August 4 itinerary keeps taxi legs plus Orange Isle evening sp
     ['2026-08-04','预计 13:15-13:30','长沙南打车前往长沙IFS国金中心·异国印象酒店(五一广场店)','长沙南→湘江中路2段18号','胡丽霞','预计打车约15分钟，视路况；到店寄存/入住衔接，酒店订单信息以订单为准'],
     ['2026-08-04','预计 14:10-14:35','从酒店打车前往岳麓山+岳麓书院讲解集合点','湘江中路2段18号→岳麓山/岳麓书院讲解集合点','胡丽霞','预计打车约25分钟，视路况；集合点以订单为准'],
     ['2026-08-04','15:00-预计17:00','岳麓山+岳麓书院讲解','岳麓山／岳麓书院','胡丽霞','15:00为订单场次，结束时间为预计；门票 ¥224；1份；预订成功；使用说明以订单详情页为准'],
-    ['2026-08-04','预计 17:00-17:30','岳麓山/岳麓书院讲解结束后前往橘子洲','岳麓山／岳麓书院→橘子洲','胡丽霞','预留讲解结束后的市内交通衔接，实际以路况和景区入口安排为准'],
-    ['2026-08-04','预计 17:30-19:30','橘子洲晚间游览','橘子洲','胡丽霞','今晚 2026-08-04 前往橘子洲；预计时段，不与 15:00 岳麓山/岳麓书院讲解重叠'],
+    ['2026-08-04','预计 17:00-18:30','岳麓山/岳麓书院讲解结束后前往橘子洲并晚餐衔接','岳麓山／岳麓书院→橘子洲','胡丽霞','预留讲解结束后的市内交通与晚餐衔接，实际以路况、景区入口和餐厅安排为准'],
+    ['2026-08-04','预计 18:30-21:00','橘子洲晚间游览','橘子洲','胡丽霞','今晚 2026-08-04 前往橘子洲；预计晚间时段，待现场开放与交通确认；不声称预约已确认'],
     ['2026-08-05','09:00集合；09:30-约11:00','湖南省博物馆马王堆基本陈列馆1.5小时深度讲解（含门票代预约）','湖南省博物馆','胡丽霞','09:30场；共4人（亲子票1大1小×2份）；09:00馆外集合；4人凭身份证；订单号登录后可见；限制以订单详情和馆方要求为准']
   ];
+  assert.ok(document.trips[0].itinerary.some(row=>row[0]==='2026-08-04'&&row.join('').includes('橘子洲')),'2026-08-04 itinerary data must include Orange Isle');
+  assert.equal(document.trips[0].itinerary.some(row=>row[0]==='2026-08-05'&&row.join('').includes('橘子洲')),false,'2026-08-05 itinerary data must not include Orange Isle');
   try{
     let page=await browser.newPage({viewport:{width:1024,height:800}});
     await page.goto(base);
     assert.equal(await page.locator('.itinerary-date-cell').first().evaluate(el=>el.rowSpan),6,'2026-08-04 date cell must span rail, taxi, Yuelu and Orange Isle rows');
-    assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,6).map(row=>row.querySelector('td[data-label="时间"] .cell-view')?.textContent.trim())),['09:00-13:01','预计 13:15-13:30','预计 14:10-14:35','15:00-预计17:00','预计 17:00-17:30','预计 17:30-19:30']);
+    assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,6).map(row=>row.querySelector('td[data-label="时间"] .cell-view')?.textContent.trim())),['09:00-13:01','预计 13:15-13:30','预计 14:10-14:35','15:00-预计17:00','预计 17:00-18:30','预计 18:30-21:00']);
     assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,6).map(row=>row.querySelector('td[data-label="活动"] .cell-view')?.textContent.trim())),[
       'G225 上海虹桥→长沙南',
       '长沙南打车前往长沙IFS国金中心·异国印象酒店(五一广场店)',
       '从酒店打车前往岳麓山+岳麓书院讲解集合点',
       '岳麓山+岳麓书院讲解',
-      '岳麓山/岳麓书院讲解结束后前往橘子洲',
+      '岳麓山/岳麓书院讲解结束后前往橘子洲并晚餐衔接',
       '橘子洲晚间游览'
     ],'2026-08-04 itinerary must keep rail arrival, taxi legs, Yuelu tour and Orange Isle evening in order');
     assert.equal(await page.locator('.itinerary-block tbody tr').nth(6).locator('td[data-label="活动"] .cell-view').textContent(),'湖南省博物馆马王堆基本陈列馆1.5小时深度讲解（含门票代预约）');
