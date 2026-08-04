@@ -129,28 +129,17 @@ test('brand logo and favicon assets exist with expected transparent-friendly siz
   ]);
 });
 
-test('Orange Isle reading keeps Qinyuanchun guide original and excerpt-limited',async()=>{
+test('Orange Isle reading contains checked full Qinyuanchun text and annotation data',async()=>{
   const markdown=await readFile(join(root,'assets/readings/orange-isle.md'),'utf8');
-  assert.match(markdown,/## 1\. 《沁园春·长沙》导读\/解析/,'橘子洲正式文章应包含《沁园春·长沙》导读/解析标题');
+  assert.match(markdown,/## 三、《沁园春·长沙》完整词文与联机注释/,'橘子洲正式文章应包含完整词文与联机注释章节');
   assert.doesNotMatch(markdown,/contentReference/,'橘子洲正式文章不应包含 contentReference 残留');
-  assert.doesNotMatch(markdown,/看万山红遍，层林尽染[；;]\s*漫江碧透，百舸争流/,'橘子洲文章不应录入可替代原作的连续大段');
-  assert.doesNotMatch(markdown,/恰同学少年，风华正茂[；;]\s*书生意气，挥斥方遒/,'橘子洲文章不应录入下阕连续大段');
-  const excerptFragments=[
-    '独立寒秋',
-    '湘江北去',
-    '橘子洲头',
-    '万山红遍',
-    '百舸争流',
-    '中流击水',
-    '曾记否',
-    '浪遏飞舟',
-    '谁主沉浮',
-    '同学少年'
-  ];
-  const quotedChars=excerptFragments
-    .filter(fragment=>markdown.includes(fragment))
-    .reduce((sum,fragment)=>sum+fragment.length,0);
-  assert.ok(quotedChars<=90,`《沁园春·长沙》短摘总量应不超过90个汉字，当前 ${quotedChars}`);
+  assert.match(markdown,/百度百科（访问日期 2026-08-04）/,'橘子洲文章应注明指定底本和访问日期');
+  assert.match(markdown,/作者为“毛泽东”/,'橘子洲文章应记录作者核对结果');
+  assert.match(markdown,/独立寒秋.*谁\[\[主沉浮\|n13\]\]？/s,'上阕关键首尾和标点应存在');
+  assert.match(markdown,/携来百侣曾游.*\[\[浪遏飞舟\|n23\]\]。/s,'下阕关键首尾和句号应存在');
+  assert.equal([...markdown.matchAll(/^\[\^n\d{2}\]:/gm)].length,23,'应录入 23 条百度百科词句注释');
+  for(const phrase of ['湘江：一名湘水','层林尽染：山上一层层的树林经霜打变红','挥斥方遒（qiú）','遏（e）：阻止'])assert.ok(markdown.includes(phrase),`注释应包含 ${phrase}`);
+  assert.match(markdown,/解析部分为家庭内部阅读场景下的原创解析/,'应说明赏析为原创解析');
 });
 
 test('default reading registry follows itinerary order and source markdown is clean',async()=>{
@@ -737,14 +726,38 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.equal(await page.locator('.reading-head h2').textContent(),'橘子洲：湘江中的千年洲岛与长沙文化地标');
   assert.equal(await page.locator('.reading-head p').textContent(),'橘子洲');
   const juzizhouTables=page.locator('.markdown-table-scroll table');
-  assert.deepEqual(await juzizhouTables.first().locator('th').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['地点','象征意义'],'橘子洲 first table should render expected headers');
-  assert.equal(await juzizhouTables.first().locator('tbody tr').nth(2).locator('td').nth(1).textContent(),'青年理想、时代思潮与历史转折','橘子洲 first table should preserve the key symbolic meaning cell');
-  assert.ok(await page.getByText('橘子洲是湘江长期冲积形成的沙洲。').count()>0,'橘子洲 article should include the natural-formation body text');
-  assert.ok(await page.getByText('它南北绵延约 5 公里').count()>0,'橘子洲 article should include corrected island length');
-  assert.ok(await page.getByText('湘水之北径南津城西，西对橘洲。').count()>0,'橘子洲 article should include the 水经注 citation');
-  assert.ok(await page.getByText('1925年青年时期的毛泽东形象').count()>0,'橘子洲 article should identify the sculpture as young Mao in 1925');
-  assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'青年理想、时代思潮与历史转折'}).count()>0,'橘子洲 article tables should render');
-  assert.ok(await page.locator('.markdown-body pre code').filter({hasText:'橘子洲地铁站'}).count()>0,'橘子洲 article route code block should render');
+  assert.deepEqual(await juzizhouTables.first().locator('th').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['方向','现场景物','阅读提示'],'橘子洲 first table should render expected headers');
+  assert.equal(await juzizhouTables.first().locator('tbody tr').nth(3).locator('td').nth(2).textContent(),'“北去”“争流”“中流”的动态感','橘子洲 first table should preserve the field-reading cue');
+  assert.ok(await page.getByText('文本与注释核对来源：百度百科（访问日期 2026-08-04）').count()>0,'橘子洲 article should cite the checked Baidu source date');
+  assert.ok(await page.locator('.markdown-body blockquote').filter({hasText:'谁主沉浮？'}).filter({hasText:'浪遏飞舟。'}).count()>0,'橘子洲 article should render complete upper and lower stanzas');
+  assert.equal(await page.locator('.inline-note').count(),23,'橘子洲 poem should expose 23 inline annotation buttons');
+  assert.equal(await page.locator('.inline-note-print li').count(),23,'print fallback should include all annotation notes');
+  assert.equal(await page.locator('.inline-note').first().getAttribute('aria-expanded'),'false','annotation trigger should start collapsed');
+  const firstNote=page.locator('.inline-note').filter({hasText:'沁园春'}).first();
+  await firstNote.hover();
+  await page.waitForSelector('.inline-note-tip:not([hidden])');
+  assert.match(await page.locator('.inline-note-tip').textContent(),/词牌名/,'desktop hover should show the annotation tooltip');
+  assert.equal(await firstNote.getAttribute('aria-expanded'),'true','hovered annotation should update aria-expanded');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>document.querySelector('.inline-note-tip')?.hidden);
+  assert.equal(await firstNote.getAttribute('aria-expanded'),'false','Escape should close the annotation tooltip');
+  await firstNote.focus();
+  await page.waitForSelector('.inline-note-tip:not([hidden])');
+  await page.keyboard.press('Space');
+  await page.waitForFunction(()=>document.querySelector('.inline-note-tip')?.hidden);
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('.inline-note-tip:not([hidden])');
+  const tipState=await page.evaluate(()=>{
+    const tip=document.querySelector('.inline-note-tip'),btn=document.querySelector('.inline-note[aria-expanded="true"]'),r=tip.getBoundingClientRect();
+    return {role:tip.getAttribute('role'),describedBy:btn.getAttribute('aria-describedby'),left:r.left,right:r.right,top:r.top,bottom:r.bottom,html:tip.innerHTML};
+  });
+  assert.equal(tipState.role,'tooltip','desktop annotation popup should use tooltip role');
+  assert.equal(tipState.describedBy,'inline-note-tip','active note should point at the popup');
+  assert.ok(tipState.left>=0&&tipState.right<=1440&&tipState.top>=0&&tipState.bottom<=1000,'annotation popup should stay inside the desktop viewport');
+  assert.equal(tipState.html.includes('<script'),false,'annotation popup content must remain escaped');
+  await page.mouse.click(12,12);
+  await page.waitForFunction(()=>document.querySelector('.inline-note-tip')?.hidden);
+  assert.notEqual(await page.evaluate(()=>getComputedStyle(document.querySelector('.inline-note-print')).display),'none','annotation notes should remain available as a print fallback');
   assert.equal(await page.getByText('contentReference').count(),0,'橘子洲 article should not contain contentReference residue');
   await page.locator('.reading-back').click();
   for(const [,file,title,...phrases] of newDefaultReadings){
@@ -761,7 +774,7 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   await page.close();
   await context.close();
 
-  page=await browser.newPage({viewport:{width:390,height:844}});
+  page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   await page.goto(base);
   await page.locator('#tabs [data-tab="reading"]').click();
   const mobileReadingListLayout=await page.evaluate(()=>{
@@ -784,7 +797,25 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   await page.locator('.reading-card').filter({hasText:'橘子洲：湘江中的千年洲岛与长沙文化地标'}).click();
   await page.waitForSelector('.markdown-body table');
   assert.equal(await page.locator('.reading-head h2').textContent(),'橘子洲：湘江中的千年洲岛与长沙文化地标','mobile reading detail should open the third Orange Isle article');
-  assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'青年理想、时代思潮与历史转折'}).count()>0,'mobile 橘子洲 detail should render its table content');
+  assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'现场景物'}).count()>0,'mobile 橘子洲 detail should render its table content');
+  const mobileNote=page.locator('.inline-note').filter({hasText:'中流击水'}).first();
+  await mobileNote.evaluate(button=>button.click());
+  await page.waitForSelector('.inline-note-tip:not([hidden])');
+  const mobileTip=await page.evaluate(()=>{
+    const tip=document.querySelector('.inline-note-tip'),r=tip.getBoundingClientRect();
+    return {role:tip.getAttribute('role'),text:tip.textContent,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:innerWidth,height:innerHeight,expanded:document.querySelector('.inline-note[aria-expanded="true"]')?.textContent};
+  });
+  assert.equal(mobileTip.role,'dialog','mobile tap annotation popup should use dialog role');
+  assert.match(mobileTip.text,/江心水深流急/,'mobile tap should show the target annotation');
+  assert.equal(mobileTip.expanded,'中流击水','mobile tap should update aria-expanded on the target note');
+  assert.ok(mobileTip.left>=0&&mobileTip.right<=mobileTip.width&&mobileTip.top>=0&&mobileTip.bottom<=mobileTip.height,`mobile annotation popup should stay inside the viewport: ${JSON.stringify(mobileTip)}`);
+  await page.mouse.click(4,4);
+  await page.waitForFunction(()=>document.querySelector('.inline-note-tip')?.hidden);
+  await mobileNote.dispatchEvent('touchstart');
+  await page.waitForTimeout(520);
+  await page.waitForSelector('.inline-note-tip:not([hidden])');
+  await page.locator('.inline-note-close').click();
+  await page.waitForFunction(()=>document.querySelector('.inline-note-tip')?.hidden);
   const tableMetrics=await page.locator('.markdown-table-scroll').first().evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}));
   assert.ok(tableMetrics.scrollWidth>tableMetrics.clientWidth,'narrow 橘子洲 markdown tables should scroll inside their own wrapper');
   assert.equal(tableMetrics.pageOverflow,false,'橘子洲 reading page should not overflow horizontally on mobile');

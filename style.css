@@ -157,6 +157,17 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
 
 .mobile-check,.item-qty{display:none}
 
+.markdown-body .inline-note{display:inline;padding:0 1px;border:0;border-radius:0;background:transparent;color:inherit;text-align:inherit;line-height:inherit;text-decoration:underline;text-decoration-style:dashed;text-decoration-thickness:1px;text-underline-offset:4px;cursor:help}
+.markdown-body .inline-note:hover,.markdown-body .inline-note:focus-visible{color:var(--green);outline:0;text-decoration-style:solid}
+.inline-note-tip{position:fixed;z-index:100;width:max-content;max-width:min(360px,calc(100vw - 20px));padding:11px 36px 12px 13px;border:1px solid #b8c8c2;border-radius:8px;background:#fff;color:var(--ink);box-shadow:0 14px 40px #203b3030;font-size:13px;line-height:1.55;white-space:normal;overflow-wrap:anywhere}
+.inline-note-tip.dialog{max-height:min(45vh,320px);overflow:auto}
+.inline-note-close{position:absolute;right:6px;top:6px;width:24px;height:24px;padding:0;border:0;border-radius:6px;background:#edf2ef;color:var(--muted);line-height:1}
+.inline-note-close:hover,.inline-note-close:focus-visible{color:var(--green);background:#dde9e5}
+.inline-note-print{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.inline-note-print h3{margin:0 0 8px;font:700 15px Georgia,"Songti SC",serif;color:var(--ink)}
+.inline-note-print ol{padding-left:22px}
+.inline-note-print li{margin:4px 0}
+
 @media(max-width:680px){
   /* The switcher already identifies the current trip; do not repeat it below. */
   .toolbar>div:first-child{display:none}
@@ -167,6 +178,12 @@ header #logout:hover{border-color:#fff;background:#ffffff20}
   body[data-tab="packing"] .toolbar .actions{grid-column:2;grid-row:1}
   body[data-tab="packing"] .toolbar .progress{grid-column:1/-1;grid-row:2}
   .tabs{margin-top:0}
+}
+
+@media print{
+  .markdown-body .inline-note{border:0;text-decoration:none}
+  .inline-note-tip{display:none!important}
+  .inline-note-print{display:block!important;color:#111;font-size:8pt}
 }
 
 /* Mobile v2: purpose-built hierarchy instead of stacking the desktop shell. */
