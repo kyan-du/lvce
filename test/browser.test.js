@@ -663,6 +663,10 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   await page.waitForSelector('.markdown-body table');
   assert.equal(await page.locator('.reading-head h2').textContent(),'橘子洲：湘江中的千年洲岛与长沙文化地标');
   assert.equal(await page.locator('.reading-head p').textContent(),'橘子洲');
+  const juzizhouTables=page.locator('.markdown-table-scroll table');
+  assert.deepEqual(await juzizhouTables.first().locator('th').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['地点','象征意义'],'橘子洲 first table should render expected headers');
+  assert.equal(await juzizhouTables.first().locator('tbody tr').nth(2).locator('td').nth(1).textContent(),'青年理想、时代思潮与历史转折','橘子洲 first table should preserve the key symbolic meaning cell');
+  assert.ok(await page.getByText('橘子洲是湘江长期冲积形成的沙洲。').count()>0,'橘子洲 article should include the natural-formation body text');
   assert.ok(await page.getByText('它南北绵延约 5 公里').count()>0,'橘子洲 article should include corrected island length');
   assert.ok(await page.getByText('湘水之北径南津城西，西对橘洲。').count()>0,'橘子洲 article should include the 水经注 citation');
   assert.ok(await page.getByText('1925年青年时期的毛泽东形象').count()>0,'橘子洲 article should identify the sculpture as young Mao in 1925');
@@ -692,11 +696,13 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.ok(Math.abs(mobileReadingListLayout.firstCard.x-mobileReadingListLayout.tabs.x)<=1,'mobile reading list cards should align with tabs');
   assert.equal(mobileReadingListLayout.pageOverflow,false,'mobile reading list should not overflow horizontally');
   await page.screenshot({path:join(root,'docs/evidence/reading-list-mobile.png'),fullPage:true});
-  await page.locator('.reading-card').filter({hasText:'岳麓书院：千年学府与中国知识传统'}).click();
+  await page.locator('.reading-card').filter({hasText:'橘子洲：湘江中的千年洲岛与长沙文化地标'}).click();
   await page.waitForSelector('.markdown-body table');
+  assert.equal(await page.locator('.reading-head h2').textContent(),'橘子洲：湘江中的千年洲岛与长沙文化地标','mobile reading detail should open the third Orange Isle article');
+  assert.ok(await page.locator('.markdown-table-scroll table').filter({hasText:'青年理想、时代思潮与历史转折'}).count()>0,'mobile 橘子洲 detail should render its table content');
   const tableMetrics=await page.locator('.markdown-table-scroll').first().evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,pageOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth}));
-  assert.ok(tableMetrics.scrollWidth>tableMetrics.clientWidth,'narrow markdown tables should scroll inside their own wrapper');
-  assert.equal(tableMetrics.pageOverflow,false,'reading page should not overflow horizontally on mobile');
+  assert.ok(tableMetrics.scrollWidth>tableMetrics.clientWidth,'narrow 橘子洲 markdown tables should scroll inside their own wrapper');
+  assert.equal(tableMetrics.pageOverflow,false,'橘子洲 reading page should not overflow horizontally on mobile');
   const mobileReadingLayout=await page.evaluate(()=>{
     const rect=selector=>{
       const box=document.querySelector(selector).getBoundingClientRect();
