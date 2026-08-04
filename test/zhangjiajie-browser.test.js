@@ -68,8 +68,12 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.deepEqual(aug5Rows,[
       '湖南博物院 3 小时重点游览',
       '打车前往五一广场',
-      '五一广场游览',
-      '前往酒店取寄存行李',
+      '五一广场',
+      '长沙IFS（KAWS，7楼）',
+      '黄兴路步行街',
+      '坡子街吃东西',
+      '太平街逛老街',
+      '从太平街回酒店取寄存行李',
       '取行李后打车前往长沙站',
       '安检、进站与候车',
       'C7950 长沙→张家界西',
@@ -79,6 +83,10 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     const itineraryText=await page.locator('.itinerary-block tbody').innerText();
     assert.match(itineraryText,/入口→马王堆汉墓陈列（重点）→辛追夫人→T型帛画→素纱襌衣/);
     assert.match(itineraryText,/不要一进去就从一楼慢慢看/);
+    assert.match(itineraryText,/五一广场→长沙IFS→黄兴路步行街→坡子街→太平街/);
+    assert.match(itineraryText,/不删除后续吃东西安排/);
+    assert.match(itineraryText,/不要删坡子街或太平街/);
+    assert.match(itineraryText,/15:15为最晚离开太平街节点/);
     assert.match(itineraryText,/行李已寄存在酒店，不是办理退房/);
     assert.match(itineraryText,/最晚15:35从酒店出发/);
     assert.match(itineraryText,/16:15前抵站是赶车底线/);
