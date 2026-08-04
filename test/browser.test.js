@@ -864,7 +864,7 @@ test('tickets render, edit, persist, clone, create and keep legacy tour hidden',
   await page.goto(base);
   await page.waitForSelector('tr.today');
   await page.locator('#tabs [data-tab="bookings"]').click();
-  assert.deepEqual(await page.locator('.booking-grid .section-title h2').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['交通','住宿','门票','紧急联系人']);
+  assert.deepEqual(await page.locator('.booking-grid .section-title h2').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['票据与打开方式','交通','住宿','门票','紧急联系人']);
   assert.deepEqual(await page.locator('.transport-block th').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['客运公司','航班/车次','座位号','日期','出发地','出发时间','目的地','抵达时间','预订号']);
   assert.deepEqual(await page.locator('.transport-block tbody tr').first().locator('td').evaluateAll(nodes=>nodes.map((n,index)=>[index,n.dataset.label,n.querySelector('.cell-view')?.textContent])),[[0,'客运公司','铁路（3张）'],[1,'航班/车次','G123 复制'],[2,'座位号','待填写'],[3,'日期','2026-08-03'],[4,'出发地','甲地'],[5,'出发时间','09:00'],[6,'目的地','乙地'],[7,'抵达时间','10:00'],[8,'预订号','BOOKING-20260803-ABC123']]);
   assert.equal(await page.locator('.transport-block tbody tr').count(),2,'transport rows must not be split by passenger seats');

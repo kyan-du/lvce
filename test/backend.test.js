@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_AUG5_ROWS,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
 const b=v=>Buffer.from(v).toString('base64url');
 test('PBKDF2 password verification',async()=>{const salt=Buffer.from('0123456789abcdef'),hash=`pbkdf2-sha256$100000$${b(salt)}$${b(pbkdf2Sync('hello',salt,100000,32,'sha256'))}`;assert.equal(await verifyPassword('hello',hash),true);assert.equal(await verifyPassword('no',hash),false)});
 test('signed session carries server-verifiable id, expires and rejects tampering',async()=>{const token=await makeSession('long random secret',0,'session-1');assert.equal((await readSession(token,'long random secret',1000)).sid,'session-1');assert.equal(await verifySession(token,'long random secret',1000),true);assert.equal(await verifySession(token+'x','long random secret',1000),false);assert.equal(await verifySession(token,'long random secret',31*864e5),false)});
@@ -199,4 +199,16 @@ test('public trip share rejects missing trips and nonexistent tokens',async()=>{
   assert.equal((await createShare({request:jsonReq('POST',{tripId:'missing'}),env})).status,404);
   assert.equal((await readPublicTrip({params:{token:'not-a-valid-token'},env})).status,404);
   assert.equal((await readPublicTrip({params:{token:'a'.repeat(43)},env})).status,404);
+});
+
+test('zhangjiajie booking-link migration adds stable references without overwriting details',()=>{
+  const original={active:'zhangjiajie',tab:'itinerary',trips:[{id:'zhangjiajie',name:'湘行记',categories:[],itinerary:structuredClone(ZHANGJIAJIE_AUG5_ROWS),transport:[['铁路（3张）','C7950','','2026-08-05','长沙','16:55','张家界西','18:51','E227154531']],hotels:[],tickets:[structuredClone(ZHANGJIAJIE_MAWANGDUI_TICKET)],emergency:[],tour:[],bookingDetails:[{id:'custom',title:'自定义预订',platform:'自定义平台'}],itineraryLinks:[{date:'2026-08-05',activity:'自定义活动',bookingId:'custom'}]}]};
+  const first=migrateTripDocument(original).data.trips[0];
+  assert.ok(first.bookingDetails.some(x=>x.id==='ticket-mawangdui-20260805'&&x.platform==='未记录'));
+  assert.ok(first.bookingDetails.some(x=>x.id==='rail-c7950-20260805'));
+  assert.ok(first.bookingDetails.some(x=>x.id==='custom'&&x.platform==='自定义平台'));
+  assert.ok(first.itineraryLinks.some(x=>x.bookingId==='ticket-mawangdui-20260805'));
+  assert.ok(first.itineraryLinks.some(x=>x.bookingId==='rail-c7950-20260805'));
+  assert.ok(first.itineraryLinks.some(x=>x.bookingId==='custom'));
+  assert.equal(migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).changed,false);
 });
