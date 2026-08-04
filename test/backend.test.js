@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
 const b=v=>Buffer.from(v).toString('base64url');
 test('PBKDF2 password verification',async()=>{const salt=Buffer.from('0123456789abcdef'),hash=`pbkdf2-sha256$100000$${b(salt)}$${b(pbkdf2Sync('hello',salt,100000,32,'sha256'))}`;assert.equal(await verifyPassword('hello',hash),true);assert.equal(await verifyPassword('no',hash),false)});
 test('signed session carries server-verifiable id, expires and rejects tampering',async()=>{const token=await makeSession('long random secret',0,'session-1');assert.equal((await readSession(token,'long random secret',1000)).sid,'session-1');assert.equal(await verifySession(token,'long random secret',1000),true);assert.equal(await verifySession(token+'x','long random secret',1000),false);assert.equal(await verifySession(token,'long random secret',31*864e5),false)});
@@ -25,9 +25,17 @@ function legacyZhangjiajieDocument(){
     ['2026-08-05','预计 09:30-12:00／待预约确认','橘子洲','长沙','胡丽霞','旧错误：8/5 不应有橘子洲'],
     ['2026-08-05','12:30','用户自定义午餐','长沙','用户','必须保留'],
     ['2026-08-05','16:55-18:51','C7950 长沙→张家界西','长沙／张家界西','胡丽霞','铁路'],
+    ['2026-08-06','预计 13:30-17:30／待确认','天子山','武陵源','胡丽霞','四日票含环保车'],
+    ['2026-08-07','预计 08:30-11:30／待确认','金鞭溪','武陵源','胡丽霞','预计上午游览；需与 13:07 张家界西出发列车衔接核对'],
+    ['2026-08-07','10:00','用户自定义咖啡','武陵源','用户','必须保留'],
+    ['2026-08-07','13:07-13:30','G9679 张家界西→芙蓉镇','张家界西／芙蓉镇','胡丽霞','铁路（3张）；预订号 E222650634'],
+    ['2026-08-07','预计 14:30-17:30／待预约确认','天门山A线','张家界','胡丽霞','门票 ¥576；2份；原行程写下午天门山，但同日列车到芙蓉镇，需复核预约时段和返程交通；以订单为准'],
+    ['2026-08-07','预计 19:00-19:30／待确认','前往锦栖民宿(张家界高铁西站店)','张家界→宁邦广场二期文华里21栋702','胡丽霞','预计晚间抵达/入住，视路况；同日芙蓉镇、天门山安排需复核；全季天门山索道站订单不再单列为行程酒店'],
+    ['2026-08-08','预计 09:00-15:00／待预约确认','猛洞河漂流','猛洞河','胡丽霞','门票 ¥680；2份；凭联系人手机或预留姓名取票使用；备换洗衣物；预计时段需预留 17:00 张家界西出发时间'],
+    ['2026-08-08','17:00-18:52','C7769 张家界西→长沙','张家界西／长沙','胡丽霞','铁路（3张）；预订号 E297617576'],
     ['2026-08-09','预计 09:30-11:30／待预约确认','湖南省博物馆马王堆讲解','长沙','胡丽霞','旧错误：8/9 不应重复马王堆'],
     ['2026-08-09','预计 14:00-15:30／待确认','开福寺','长沙','胡丽霞','必须保留']
-  ],transport:[],hotels:[],tickets:[['湖南省博物馆马王堆讲解','待填写','待填写','2份','凭「身份证」集合使用','¥262','预订成功']],emergency:[],tour:[]},{id:'custom',name:'自定义旅行',categories:[],itinerary:[['2026-08-05','09:00','橘子洲自定义','长沙','用户','非 zhangjiajie 不迁移']],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
+  ],transport:[['铁路（3张）','G9679','座位','2026-08-07','张家界西','13:07','芙蓉镇','13:30','E222650634'],['铁路（3张）','C7769','座位','2026-08-08','张家界西','17:00','长沙','18:52','E297617576']],hotels:[],tickets:[['湖南省博物馆马王堆讲解','待填写','待填写','2份','凭「身份证」集合使用','¥262','预订成功'],['猛洞河漂流','待填写','待填写','2份','凭「联系人手机或预留姓名」取票使用','¥680','预订成功'],['天门山A线','待填写','待填写','2份','凭「下单时预留的证件原件+电子凭证或纸质凭证」使用','¥576','预订成功']],emergency:[],tour:[]},{id:'custom',name:'自定义旅行',categories:[],itinerary:[['2026-08-05','09:00','橘子洲自定义','长沙','用户','非 zhangjiajie 不迁移']],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
 }
 
 test('zhangjiajie persisted itinerary migration fixes known stale rows and preserves unrelated edits',()=>{
@@ -40,8 +48,21 @@ test('zhangjiajie persisted itinerary migration fixes known stale rows and prese
   assert.equal(trip.itinerary.some(row=>row[0]==='2026-08-05'&&row.join('').includes('橘子洲')),false,'8/5 Orange Isle rows must be removed from zhangjiajie');
   assert.equal(trip.itinerary.some(row=>row[0]==='2026-08-09'&&row.join('').includes('马王堆')),false,'8/9 Mawangdui duplicates must be removed from zhangjiajie');
   assert.ok(trip.itinerary.some(row=>row[2]==='用户自定义午餐'),'unrelated custom itinerary rows should be preserved');
+  assert.ok(trip.itinerary.some(row=>row[2]==='用户自定义咖啡'),'same-date custom itinerary rows should be preserved');
   assert.ok(trip.itinerary.some(row=>row[2]==='开福寺'),'unrelated default rows should be preserved');
+  for(const row of [ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW])assert.ok(trip.itinerary.some(actual=>actual.every((v,i)=>v===row[i])),`${row[2]} should be present`);
+  assert.equal(trip.itinerary.some(row=>row[0]==='2026-08-07'&&row[2]==='天门山A线'),false,'8/7 Tianmen row must be removed');
+  assert.equal(trip.itinerary.some(row=>row[0]==='2026-08-08'&&row[2]==='猛洞河漂流'),false,'8/8 Mengdong row must be removed');
+  assert.equal(trip.itinerary.filter(row=>row[2]==='G9679 张家界西→芙蓉镇').length,1,'G9679 must not be duplicated');
+  assert.equal(trip.itinerary.filter(row=>row[2]==='C7769 张家界西→长沙').length,1,'C7769 must not be duplicated');
+  assert.deepEqual(trip.transport,original.trips[0].transport,'explicit train rows should not be modified');
   assert.deepEqual(trip.tickets[0],ZHANGJIAJIE_MAWANGDUI_TICKET,'known old Mawangdui ticket row should be upgraded');
+  assert.deepEqual(trip.tickets[1],ZHANGJIAJIE_MENGDONG_TICKET,'Mengdong ticket should keep pending date/time and add planned date evidence note');
+  assert.deepEqual(trip.tickets[2],ZHANGJIAJIE_TIANMEN_TICKET,'Tianmen ticket should keep pending date/time and add planned date evidence note');
+  assert.equal(trip.tickets[1][1],'待填写');
+  assert.equal(trip.tickets[1][2],'待填写');
+  assert.equal(trip.tickets[2][1],'待填写');
+  assert.equal(trip.tickets[2][2],'待填写');
   assert.deepEqual(result.data.trips.find(t=>t.id==='custom').itinerary,original.trips.find(t=>t.id==='custom').itinerary,'other trips must not be migrated');
 });
 
