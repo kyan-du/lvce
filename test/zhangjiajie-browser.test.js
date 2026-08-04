@@ -90,11 +90,12 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.match(itineraryText,/15:55乘车返回酒店，不要步行/);
     assert.match(itineraryText,/行李已寄存在酒店，不是办理退房/);
     assert.match(itineraryText,/约16:05到酒店，取寄存行李即走/);
-    assert.match(itineraryText,/酒店距湘江中路站约200米，步行约3-5分钟/);
+    assert.match(itineraryText,/从酒店（湘江中路2段18号）步行约3-5分钟到湘江中路站/);
     assert.match(itineraryText,/地铁2号线往光达方向，经五一广场、芙蓉广场、迎宾路口、袁家岭至长沙火车站/);
     assert.match(itineraryText,/全程含步行、安检、等车按约25分钟/);
-    assert.match(itineraryText,/最晚16:10进湘江中路站/);
-    assert.match(itineraryText,/若打车无法在25分钟内送达，则直接走地铁/);
+    assert.match(itineraryText,/地铁为稳定方案，无需换乘/);
+    assert.match(itineraryText,/约16:10前进湘江中路站/);
+    assert.match(itineraryText,/15:45查看实时导航：打车仅在路况顺畅时采用；若预计车程超过25分钟，就优先选择地铁/);
     assert.match(itineraryText,/目标约16:30-16:35抵站/);
     assert.doesNotMatch(itineraryText,/14:40-16:20|取行李并退房|16:00-16:05|16:15-16:25|15:20开始返回|15:30离开|30-40分钟|50-55分钟/);
     const zjjRows=rows.filter(row=>row.date>='2026-08-06').map(row=>row.activity);
