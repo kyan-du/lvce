@@ -108,6 +108,30 @@ test('brand logo and favicon assets exist with expected transparent-friendly siz
   ]);
 });
 
+test('Orange Isle reading keeps Qinyuanchun guide original and excerpt-limited',async()=>{
+  const markdown=await readFile(join(root,'assets/readings/orange-isle.md'),'utf8');
+  assert.match(markdown,/## 1\. 《沁园春·长沙》导读\/解析/,'橘子洲正式文章应包含《沁园春·长沙》导读/解析标题');
+  assert.doesNotMatch(markdown,/contentReference/,'橘子洲正式文章不应包含 contentReference 残留');
+  assert.doesNotMatch(markdown,/看万山红遍，层林尽染[；;]\s*漫江碧透，百舸争流/,'橘子洲文章不应录入可替代原作的连续大段');
+  assert.doesNotMatch(markdown,/恰同学少年，风华正茂[；;]\s*书生意气，挥斥方遒/,'橘子洲文章不应录入下阕连续大段');
+  const excerptFragments=[
+    '独立寒秋',
+    '湘江北去',
+    '橘子洲头',
+    '万山红遍',
+    '百舸争流',
+    '中流击水',
+    '曾记否',
+    '浪遏飞舟',
+    '谁主沉浮',
+    '同学少年'
+  ];
+  const quotedChars=excerptFragments
+    .filter(fragment=>markdown.includes(fragment))
+    .reduce((sum,fragment)=>sum+fragment.length,0);
+  assert.ok(quotedChars<=90,`《沁园春·长沙》短摘总量应不超过90个汉字，当前 ${quotedChars}`);
+});
+
 async function assertLoginLogo(page,name,{desktop=false}={}){
   const metrics=await page.evaluate(()=>{
     const rect=selector=>{
