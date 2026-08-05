@@ -56,9 +56,9 @@ test('zhangjiajie persisted itinerary migration fixes known stale rows and prese
   assert.equal(trip.itinerary.filter(row=>row[2]==='G9679 张家界西→芙蓉镇').length,1,'G9679 must not be duplicated');
   assert.equal(trip.itinerary.filter(row=>row[2]==='C7769 张家界西→长沙').length,1,'C7769 must not be duplicated');
   assert.deepEqual(trip.transport,original.trips[0].transport,'explicit train rows should not be modified');
-  assert.deepEqual(trip.tickets[0],ZHANGJIAJIE_MAWANGDUI_TICKET,'known old Mawangdui ticket row should be upgraded');
-  assert.deepEqual(trip.tickets[1],ZHANGJIAJIE_MENGDONG_TICKET,'Mengdong ticket should keep pending date/time and add planned date evidence note');
-  assert.deepEqual(trip.tickets[2],ZHANGJIAJIE_TIANMEN_TICKET,'Tianmen ticket should keep pending date/time and add planned date evidence note');
+  assert.deepEqual(trip.tickets[0].slice(0,7),ZHANGJIAJIE_MAWANGDUI_TICKET,'known old Mawangdui ticket row should be upgraded');
+  assert.deepEqual(trip.tickets[1].slice(0,7),ZHANGJIAJIE_MENGDONG_TICKET,'Mengdong ticket should keep pending date/time and add planned date evidence note');
+  assert.deepEqual(trip.tickets[2].slice(0,7),ZHANGJIAJIE_TIANMEN_TICKET,'Tianmen ticket should keep pending date/time and add planned date evidence note');
   assert.equal(trip.tickets[1][1],'待填写');
   assert.equal(trip.tickets[1][2],'待填写');
   assert.equal(trip.tickets[2][1],'待填写');
@@ -201,33 +201,32 @@ test('public trip share rejects missing trips and nonexistent tokens',async()=>{
   assert.equal((await readPublicTrip({params:{token:'a'.repeat(43)},env})).status,404);
 });
 
-test('zhangjiajie booking-link migration adds stable references without overwriting details',()=>{
-  const original={active:'zhangjiajie',tab:'itinerary',trips:[{id:'zhangjiajie',name:'湘行记',categories:[],itinerary:structuredClone(ZHANGJIAJIE_AUG5_ROWS),transport:[['铁路（3张）','C7950','','2026-08-05','长沙','16:55','张家界西','18:51','E227154531']],hotels:[],tickets:[structuredClone(ZHANGJIAJIE_MAWANGDUI_TICKET)],emergency:[],tour:[],bookingDetails:[{id:'custom',title:'自定义预订',platform:'自定义平台'}],itineraryLinks:[{date:'2026-08-05',activity:'自定义活动',bookingId:'custom'}]}]};
+test('legacy booking details migrate into ticket and transport sources without duplicates',()=>{
+  const original={active:'zhangjiajie',tab:'itinerary',trips:[{id:'zhangjiajie',name:'湘行记',categories:[],itinerary:structuredClone(ZHANGJIAJIE_AUG5_ROWS),transport:[['铁路（3张）','C7950','','2026-08-05','长沙','16:55','张家界西','18:51','E227154531']],hotels:[],tickets:[structuredClone(ZHANGJIAJIE_MAWANGDUI_TICKET)],emergency:[],tour:[],bookingDetails:[{id:'custom',type:'ticket',title:'自定义预订',platform:'自定义平台',orderNumber:'CUSTOM-1',privateNotes:'私密'}],itineraryLinks:[{date:'2026-08-05',activity:'自定义活动',bookingId:'custom'}]}]};
   const first=migrateTripDocument(original).data.trips[0];
-  assert.ok(first.bookingDetails.some(x=>x.id==='ticket-mawangdui-20260805'&&x.platform==='未记录'));
-  assert.ok(first.bookingDetails.some(x=>x.id==='rail-c7950-20260805'));
-  assert.ok(first.bookingDetails.some(x=>x.id==='custom'&&x.platform==='自定义平台'));
-  assert.ok(first.itineraryLinks.some(x=>x.bookingId==='ticket-mawangdui-20260805'));
-  assert.ok(first.itineraryLinks.some(x=>x.bookingId==='rail-c7950-20260805'));
-  assert.ok(first.itineraryLinks.some(x=>x.bookingId==='custom'));
+  assert.equal(first.bookingDetails,undefined);
+  assert.ok(first.tickets.some(row=>row[0]==='自定义预订'&&row[7]==='自定义平台'&&row[8]==='CUSTOM-1'&&row[11]==='私密'&&row[12]==='custom'));
+  assert.ok(first.itineraryLinks.some(x=>x.targetType==='ticket'&&x.targetId==='ticket-mawangdui-20260805'));
+  assert.ok(first.itineraryLinks.some(x=>x.targetType==='transport'&&x.targetId==='transport:0'));
   assert.equal(migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).changed,false);
 });
 
-test('zhangjiajie Ctrip booking migration adds five orders, links them, and remains idempotent',()=>{
+test('zhangjiajie Ctrip details live in five ticket rows and remain idempotent',()=>{
   const original={active:'zhangjiajie',tab:'itinerary',trips:[{id:'zhangjiajie',name:'湘行记',categories:[],itinerary:[
     ['2026-08-06','','森林公园东门B线入园','','',''],['2026-08-06','','百龙天梯、袁家界','','',''],['2026-08-06','','天子山','','',''],
     ['2026-08-07','','芙蓉镇站衔接猛洞河漂流','','',''],['2026-08-08','','天门山A线','','','']
-  ],transport:[],hotels:[],tickets:[['张家界森林公园四日票'],['百龙天梯'],['天子山'],['猛洞河漂流'],['天门山A线']],emergency:[],tour:[],bookingDetails:[{id:'custom',roomType:'保留',concierge:'legacy'}],itineraryLinks:[]}]};
+  ],transport:[],hotels:[],tickets:[['张家界森林公园四日票'],['百龙天梯'],['天子山'],['猛洞河漂流'],['天门山A线']],emergency:[],tour:[],bookingDetails:[],itineraryLinks:[]}]};
   const first=migrateTripDocument(original).data.trips[0];
   const expected=['ticket-forest-20260806','ticket-bailong-20260806','ticket-tianzishan-20260806','ticket-mengdong-20260807','ticket-tianmen-20260808'];
-  assert.deepEqual(expected.map(id=>first.bookingDetails.some(x=>x.id===id)),[true,true,true,true,true]);
-  assert.deepEqual(expected.map(id=>first.itineraryLinks.some(x=>x.bookingId===id)),[true,true,true,true,true]);
-  assert.ok(first.bookingDetails.some(x=>x.id==='custom'&&x.roomType==='保留'&&x.concierge==='legacy'));
-  assert.equal(migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).changed,false);
+  assert.deepEqual(expected.map(id=>first.tickets.some(row=>row[12]===id&&row[7]==='携程'&&row[8])),[true,true,true,true,true]);
+  assert.deepEqual(expected.map(id=>first.itineraryLinks.some(x=>x.targetType==='ticket'&&x.targetId===id)),[true,true,true,true,true]);
+  assert.equal(first.bookingDetails,undefined);
+  const second=migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).data.trips[0];
+  assert.deepEqual(second,first);
 });
 
 test('public trip share strips booking order numbers and private auxiliary codes',async()=>{
-  const sensitive={...shareDoc,trips:[{...shareDoc.trips[0],bookingDetails:[{id:'ticket',title:'天门山A线',orderNumber:'1128148375850216',privateNotes:'辅助码 ANWSK26080853374340612',credential:'公开使用说明'}]},shareDoc.trips[1]]};
+  const sensitive={...shareDoc,trips:[{...shareDoc.trips[0],tickets:[['天门山A线','','','','','','公开使用说明','携程','1128148375850216','','','辅助码 ANWSK26080853374340612','ticket']] ,bookingDetails:[{id:'ticket',title:'天门山A线',orderNumber:'1128148375850216',privateNotes:'辅助码 ANWSK26080853374340612',credential:'公开使用说明'}]},shareDoc.trips[1]]};
   const env=envWithShares(sensitive);
   const created=await createShare({request:jsonReq('POST',{tripId:'one'}),env});
   const token=(await created.json()).token;

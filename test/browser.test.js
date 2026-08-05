@@ -864,7 +864,7 @@ test('tickets render, edit, persist, clone, create and keep legacy tour hidden',
   await page.goto(base);
   await page.waitForSelector('tr.today');
   await page.locator('#tabs [data-tab="bookings"]').click();
-  assert.deepEqual(await page.locator('.booking-grid .section-title h2').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['票据与打开方式','交通','住宿','门票','紧急联系人']);
+  assert.deepEqual(await page.locator('.booking-grid .section-title h2').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['交通','住宿','门票','紧急联系人']);
   assert.deepEqual(await page.locator('.transport-block th').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['客运公司','航班/车次','座位号','日期','出发地','出发时间','目的地','抵达时间','预订号']);
   assert.deepEqual(await page.locator('.transport-block tbody tr').first().locator('td').evaluateAll(nodes=>nodes.map((n,index)=>[index,n.dataset.label,n.querySelector('.cell-view')?.textContent])),[[0,'客运公司','铁路（3张）'],[1,'航班/车次','G123 复制'],[2,'座位号','待填写'],[3,'日期','2026-08-03'],[4,'出发地','甲地'],[5,'出发时间','09:00'],[6,'目的地','乙地'],[7,'抵达时间','10:00'],[8,'预订号','BOOKING-20260803-ABC123']]);
   assert.equal(await page.locator('.transport-block tbody tr').count(),2,'transport rows must not be split by passenger seats');
@@ -909,14 +909,14 @@ test('tickets render, edit, persist, clone, create and keep legacy tour hidden',
   await page.locator('.tickets-block .section-title button').click();
   let newRow=page.locator('.tickets-block tbody tr').last();
   const ticket=['夜游门票','2026-08-05','亲子票 19:30 场','3','李四 / VOUCHER-9','¥366','凭短信凭证换票'];
-  for(const [i,label] of ['景点/项目','使用日期','票种/场次','数量','游客/凭证','订单金额','使用说明'].entries())await newRow.locator(`textarea[aria-label="${label}"]`).fill(ticket[i]);
+  for(const [i,label] of ['景点/项目','使用日期','票种/场次','数量','游客','订单金额','退改/临场提示'].entries())await newRow.locator(`textarea[aria-label="${label}"]`).fill(ticket[i]);
   await page.locator('#saveEdit').focus();
   await page.getByRole('button',{name:'保存',exact:true}).click();
   await page.getByText('修改已保存').waitFor();
   await page.waitForTimeout(850);
   assert.deepEqual(putBodies.at(-1).trips[0].transport[0],['铁路（3张）','G123','03车 05A','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],'seat and full booking number should sync through the API document');
   assert.deepEqual(putBodies.at(-1).trips[0].hotels[0],['酒店','2026-08-03','2026-08-05','138 0000 0000','测试地址 1 号','标准双床房','2','¥1'],'saved hotel should permanently remove concierge, normalize room type and sync explicit checkout in the canonical schema');
-  assert.deepEqual(putBodies.at(-1).trips[0].tickets.at(-1),ticket,'saved ticket should sync through the API document');
+  assert.deepEqual(putBodies.at(-1).trips[0].tickets.at(-1).slice(0,7),ticket,'saved ticket should sync through the API document');
   assert.deepEqual(putBodies.at(-1).trips[0].tour,document.trips[0].tour,'saving tickets should preserve legacy tour data');
 
   await page.locator('summary[aria-label="更多操作"]').click();
@@ -930,7 +930,7 @@ test('tickets render, edit, persist, clone, create and keep legacy tour hidden',
   await page.locator('summary[aria-label="更多操作"]').click();
   await page.getByRole('button',{name:'复制',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#tripName').value.endsWith('副本'));
-  assert.deepEqual(await page.evaluate(()=>{let s=JSON.parse(localStorage.getItem('lvce-v1')),t=s.trips.find(x=>x.id===s.active);return {transport:t.transport,tickets:t.tickets,tour:t.tour}}),{transport:[['铁路（3张）','G123','03车 05A','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号\n李四 二等座 01车01B号\n王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],tickets:document.trips[0].tickets,tour:document.trips[0].tour},'duplicate should retain migrated transport, tickets and legacy tour data');
+  assert.deepEqual(await page.evaluate(()=>{let s=JSON.parse(localStorage.getItem('lvce-v1')),t=s.trips.find(x=>x.id===s.active);return {transport:t.transport,tickets:t.tickets.map(row=>row.slice(0,7)),tour:t.tour}}),{transport:[['铁路（3张）','G123','03车 05A','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号\n李四 二等座 01车01B号\n王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],tickets:document.trips[0].tickets,tour:document.trips[0].tour},'duplicate should retain migrated transport, tickets and legacy tour data');
 
   await page.locator('#newTrip').click();
   await page.locator('#newName').fill('无票新旅行');
