@@ -55,7 +55,7 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
   const page=await browser.newPage({viewport:{width:1180,height:900}});
   try{
     await page.goto(base);
-    await page.waitForSelector('.itinerary-block tbody tr');
+    await page.waitForSelector('.itinerary-block tbody tr',{state:'attached'});
     const rows=await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>{
       let date='';
       return rows.map(row=>{
@@ -81,6 +81,7 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
       '用户自定义午餐'
     ]);
     assert.equal(aug5Rows.filter(name=>name==='C7950 长沙→张家界西').length,1);
+    await page.locator('.itinerary-day-toggle[aria-expanded="false"]').evaluateAll(buttons=>buttons.forEach(button=>button.click()));
     const itineraryText=await page.locator('.itinerary-block tbody').innerText();
     assert.match(itineraryText,/入口→马王堆汉墓陈列（重点）→辛追夫人→T型帛画→素纱襌衣/);
     assert.match(itineraryText,/不要一进去就从一楼慢慢看/);
@@ -98,7 +99,7 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.match(itineraryText,/15:45查看实时导航：打车仅在路况顺畅时采用；若预计车程超过25分钟，就优先选择地铁/);
     assert.match(itineraryText,/目标约16:30-16:35抵站/);
     assert.doesNotMatch(itineraryText,/14:40-16:20|取行李并退房|16:00-16:05|16:15-16:25|15:20开始返回|15:30离开|30-40分钟|50-55分钟/);
-    const zjjRows=rows.filter(row=>row.date>='2026-08-06').map(row=>row.activity);
+    const zjjRows=rows.filter(row=>row.date>='2026-08-06').map(row=>row.activity?.replace('查看预约 →','').trim());
     assert.deepEqual(zjjRows,[
       '天子山',
       '金鞭溪缩短路线',

@@ -212,3 +212,28 @@ test('zhangjiajie booking-link migration adds stable references without overwrit
   assert.ok(first.itineraryLinks.some(x=>x.bookingId==='custom'));
   assert.equal(migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).changed,false);
 });
+
+test('zhangjiajie Ctrip booking migration adds five orders, links them, and remains idempotent',()=>{
+  const original={active:'zhangjiajie',tab:'itinerary',trips:[{id:'zhangjiajie',name:'湘行记',categories:[],itinerary:[
+    ['2026-08-06','','森林公园东门B线入园','','',''],['2026-08-06','','百龙天梯、袁家界','','',''],['2026-08-06','','天子山','','',''],
+    ['2026-08-07','','芙蓉镇站衔接猛洞河漂流','','',''],['2026-08-08','','天门山A线','','','']
+  ],transport:[],hotels:[],tickets:[['张家界森林公园四日票'],['百龙天梯'],['天子山'],['猛洞河漂流'],['天门山A线']],emergency:[],tour:[],bookingDetails:[{id:'custom',roomType:'保留',concierge:'legacy'}],itineraryLinks:[]}]};
+  const first=migrateTripDocument(original).data.trips[0];
+  const expected=['ticket-forest-20260806','ticket-bailong-20260806','ticket-tianzishan-20260806','ticket-mengdong-20260807','ticket-tianmen-20260808'];
+  assert.deepEqual(expected.map(id=>first.bookingDetails.some(x=>x.id===id)),[true,true,true,true,true]);
+  assert.deepEqual(expected.map(id=>first.itineraryLinks.some(x=>x.bookingId===id)),[true,true,true,true,true]);
+  assert.ok(first.bookingDetails.some(x=>x.id==='custom'&&x.roomType==='保留'&&x.concierge==='legacy'));
+  assert.equal(migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).changed,false);
+});
+
+test('public trip share strips booking order numbers and private auxiliary codes',async()=>{
+  const sensitive={...shareDoc,trips:[{...shareDoc.trips[0],bookingDetails:[{id:'ticket',title:'天门山A线',orderNumber:'1128148375850216',privateNotes:'辅助码 ANWSK26080853374340612',credential:'公开使用说明'}]},shareDoc.trips[1]]};
+  const env=envWithShares(sensitive);
+  const created=await createShare({request:jsonReq('POST',{tripId:'one'}),env});
+  const token=(await created.json()).token;
+  const body=await (await readPublicTrip({params:{token},env})).json();
+  const serialized=JSON.stringify(body);
+  assert.equal(serialized.includes('1128148375850216'),false);
+  assert.equal(serialized.includes('ANWSK26080853374340612'),false);
+  assert.equal(serialized.includes('公开使用说明'),true);
+});
