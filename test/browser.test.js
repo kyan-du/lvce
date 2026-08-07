@@ -1554,6 +1554,7 @@ test('past itinerary is one external collapsed section while today and future re
     assert.equal(await page.locator('.itinerary-day-summary,.itinerary-day-collapsed,.itinerary-day-toggle').count(),0,'daily collapse placeholders must not exist in tables');
     assert.equal(await page.locator('.itinerary-current .itinerary-day-group').count(),2,'today and future remain continuously visible as date groups');
     assert.deepEqual(await page.locator('.itinerary-current .itinerary-day-heading h3').allTextContents(),['8月7日 周五','8月8日 周六']);
+    assert.deepEqual(await page.locator('.itinerary-current .itinerary-day-badge').allTextContents(),['Day 4','Day 5'],'day badges count from August 4 as Day 1');
     assert.equal(await page.locator('.itinerary-block td[data-label="日期"],.itinerary-block th:text-is("日期")').count(),0,'data tables have no date column');
     assert.equal(await page.locator('.itinerary-day-heading button,.itinerary-day-group details').count(),0,'date headings are static and never daily collapsibles');
     await page.setViewportSize({width:1440,height:1000});
