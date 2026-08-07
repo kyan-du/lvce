@@ -58,6 +58,10 @@ test('zhangjiajie persisted itinerary migration fixes known stale rows and prese
   assert.ok(trip.transport.some(row=>row[1]==='C7947')&&trip.transport.some(row=>row[1]==='G206'),'replacement trains must be present');
   const transfer=trip.itinerary.find(row=>row[2]===ZHANGJIAJIE_CHANGSHA_TRANSFER[2]);
   assert.deepEqual(transfer,ZHANGJIAJIE_CHANGSHA_TRANSFER,'Changsha station transfer must be explicit between trains');
+  const jinbianxi=trip.itinerary.find(row=>row[2]==='金鞭溪');
+  assert.match(jinbianxi[3],/国家森林公园南门→金鞭溪/);
+  assert.match(jinbianxi[5],/门票4天有效.*金鞭溪包含在该门票内.*不另购金鞭溪门票/s);
+  assert.ok(trip.itineraryLinks.some(link=>link.date==='2026-08-09'&&link.activity==='金鞭溪'&&link.targetType==='ticket'&&link.targetId==='ticket-forest-20260806'));
   assert.match(transfer[5],/仅间隔85分钟.*立即.*地铁2号线往光达方向直达.*约20-23分钟.*安检/s);
   assert.deepEqual(trip.tickets[0].slice(0,7),ZHANGJIAJIE_MAWANGDUI_TICKET,'known old Mawangdui ticket row should be upgraded');
   assert.deepEqual(trip.tickets[1].slice(0,7),ZHANGJIAJIE_MENGDONG_TICKET,'Mengdong ticket should keep pending date/time and add planned date evidence note');
