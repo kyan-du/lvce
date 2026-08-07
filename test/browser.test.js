@@ -1525,7 +1525,7 @@ test('xiangxingji August 4 itinerary keeps taxi legs plus Orange Isle evening sp
     await page.close();
     page=await browser.newPage({viewport:{width:390,height:844}});
     await page.goto(base);
-    assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),['2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-05'],'mobile itinerary cards should repeat same-day dates and keep the next date distinct');
+    assert.deepEqual(await page.locator('.itinerary-block tbody tr:not(:has(td.empty))').evaluateAll(rows=>rows.map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),['2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-05'],'mobile itinerary cards should repeat same-day dates and keep the next date distinct');
     await page.screenshot({path:join(root,'docs/evidence','local-xiangxingji-responsive-dates-mobile-20260804.png'),fullPage:true});
     await page.close();
   }finally{
@@ -1535,3 +1535,31 @@ test('xiangxingji August 4 itinerary keeps taxi legs plus Orange Isle evening sp
 });
 
 test('A4 landscape print PDF stays within printable page',async()=>{let page=await browser.newPage({viewport:{width:1440,height:1000}});await page.goto(base);for(const [tab,label] of [['itinerary','行程'],['bookings','预订与联系人'],['packing','装箱清单']]){await page.locator(`#tabs [data-tab="${tab}"]`).click();let file=join(root,`docs/evidence/print-${label}.pdf`);await page.pdf({path:file,format:'A4',landscape:true,printBackground:true,preferCSSPageSize:true});let pdf=await PDFDocument.load(await readFile(file));assert.ok(pdf.getPageCount()>=1);for(const p of pdf.getPages()){let {width,height}=p.getSize();assert.ok(width>height);assert.ok(Math.abs(width-841.89)<3&&Math.abs(height-595.28)<3)}}});
+
+test('past itinerary is one external collapsed section while today and future remain visible',async()=>{
+  const oldItinerary=structuredClone(document.trips[0].itinerary),oldTab=document.tab;
+  document.tab='itinerary';
+  document.trips[0].itinerary=[
+    ['2026-08-06','09:00','过去一','旧地','联系人','旧备注'],
+    ['2026-08-06','10:00','过去二','旧地','联系人','旧备注'],
+    ['2026-08-07','09:00','今天','此地','联系人','今日备注'],
+    ['2026-08-08','09:00','未来','新地','联系人','未来备注']
+  ];
+  const page=await pageWithMockedNow('2026-08-07T04:00:00.000Z');
+  try{
+    await page.goto(base);
+    assert.equal(await page.locator('.past-itinerary').count(),1,'there must be one aggregate past itinerary section');
+    assert.equal(await page.locator('.past-itinerary').getAttribute('open'),null,'past section starts collapsed');
+    assert.equal(await page.locator('.past-itinerary summary').innerText(),'过去的行程\n共 2 项\n⌄');
+    assert.equal(await page.locator('.itinerary-day-summary,.itinerary-day-collapsed,.itinerary-day-toggle').count(),0,'daily collapse placeholders must not exist in tables');
+    assert.equal(await page.locator('.itinerary-current tbody tr').count(),2,'today and future remain continuously visible');
+    assert.deepEqual(await page.locator('.itinerary-current td[data-label="日期"] .cell-view').allTextContents(),['2026-08-07','2026-08-08']);
+    await page.locator('.past-itinerary summary').click();
+    assert.equal(await page.locator('.past-itinerary tbody tr').count(),2,'expanding reveals all past items');
+    assert.deepEqual(await page.locator('.past-itinerary tbody tr').evaluateAll(rows=>rows.map(row=>row.children.length)),[5,5],'every read-only past row has the stable five-column shape');
+    await page.locator('summary[aria-label="更多操作"]').click();
+    await page.getByRole('button',{name:'修改',exact:true}).click();
+    assert.equal(await page.locator('.past-itinerary textarea[aria-label="日期"]').count(),2,'past rows remain editable');
+    assert.equal(await page.locator('.past-itinerary .remove-row').count(),2,'past rows retain delete controls');
+  }finally{await page.close();document.trips[0].itinerary=oldItinerary;document.tab=oldTab}
+});
