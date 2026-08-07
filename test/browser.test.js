@@ -1339,9 +1339,7 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     assert.equal(await page.locator('.itinerary-block [data-label="联系人"]').count(),0,'itinerary contact column must not be rendered');
     assert.equal(await page.locator('.itinerary-block tbody tr').first().locator('td').count(),5,'first itinerary row should render five cells');
     if(viewport.width>680){
-      assert.equal(await page.locator('.itinerary-date-cell').first().evaluate(el=>el.rowSpan),2,'desktop itinerary date cell should merge same-day rows with rowspan');
-      assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td[data-label="日期"]').evaluateAll(nodes=>nodes.filter(el=>getComputedStyle(el).display!=='none').length),0,'desktop repeated date cell should stay hidden after rowspan');
-      assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td.mobile-itinerary-date-cell').evaluate(el=>getComputedStyle(el).display),'none','desktop mobile-only date cell must not break rowspan rendering');
+      assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td[data-label="日期"]').evaluateAll(nodes=>nodes.filter(el=>getComputedStyle(el).display!=='none').length),1,'desktop rows must repeat their date in a stable five-column structure');
       if(name==='desktop')await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-desktop-20260804.png'),fullPage:true});
     }else{
       assert.equal(await page.locator('.itinerary-block tbody tr').nth(0).locator('td[data-label="日期"]').count(),1,'mobile first same-day card should show the date');
@@ -1351,7 +1349,6 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     }
     await page.locator('summary[aria-label="更多操作"]').click();
     await page.locator('#editTrip').click();
-    assert.equal(await page.locator('.itinerary-block .mobile-itinerary-date-cell').count(),0,'editing itinerary should not render duplicate mobile-only date cells');
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing itinerary must not expose contact editors');
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),2,'editing itinerary should keep one clear date editor per itinerary row');
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="备注"]').first().inputValue(),'备注','itinerary notes editor must use row index 5');
@@ -1414,11 +1411,11 @@ async function assertSingleNextItinerary(page,activity){
   await page.waitForSelector('tr.next-itinerary');
   assert.equal(await page.locator('tr.next-itinerary').count(),1,'only one row should be marked as the next itinerary item');
   assert.equal(await page.locator('tr.today').count(),1,'legacy today class should only remain on the next itinerary row');
-  assert.equal(await page.locator('tr.next-itinerary').locator('td.itinerary-date-cell.next-itinerary').count(),0,'date rowspan cell must not carry the next class');
+  assert.equal(await page.locator('tr.next-itinerary').locator('td.itinerary-date-cell.next-itinerary').count(),0,'date cell must not carry the next class');
   assert.equal(await page.locator('tr.next-itinerary td[data-label="活动"] .cell-view').textContent(),activity);
 }
 
-test('itinerary next-item highlight follows Asia/Shanghai time without coloring the rowspan date cell',async()=>{
+test('itinerary next-item highlight follows Asia/Shanghai time with row-local date cells',async()=>{
   const oldItinerary=structuredClone(document.trips[0].itinerary),oldTab=document.tab;
   document.tab='itinerary';
   document.trips[0].itinerary=[
@@ -1442,10 +1439,9 @@ test('itinerary next-item highlight follows Asia/Shanghai time without coloring 
     assert.equal(await page.getByText('下一件').count(),0,'old next-itinerary label must not be exposed after leaving edit mode');
     let colors=await page.evaluate(()=>{
       const date=document.querySelector('td.itinerary-date-cell'),time=document.querySelector('tr.next-itinerary td[data-label="时间"]');
-      return {date:getComputedStyle(date).backgroundColor,time:getComputedStyle(time).backgroundColor,rowspan:date.rowSpan};
+      return {date:getComputedStyle(date).backgroundColor,time:getComputedStyle(time).backgroundColor};
     });
-    assert.equal(colors.rowspan,3,'same-day date cell should remain merged with rowspan');
-    assert.notEqual(colors.date,'rgb(255, 247, 215)','date rowspan cell should not use the desktop yellow highlight');
+    assert.notEqual(colors.date,'rgb(255, 247, 215)','date cell should not use the desktop yellow highlight');
     assert.equal(colors.time,'rgb(255, 247, 215)','time cell should receive the desktop yellow highlight');
     await page.close();
 
@@ -1516,7 +1512,6 @@ test('xiangxingji August 4 itinerary keeps taxi legs plus Orange Isle evening sp
   try{
     let page=await browser.newPage({viewport:{width:1024,height:800}});
     await page.goto(base);
-    assert.equal(await page.locator('.itinerary-date-cell').first().evaluate(el=>el.rowSpan),6,'2026-08-04 date cell must span rail, taxi, Yuelu and Orange Isle rows');
     assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,6).map(row=>row.querySelector('td[data-label="时间"] .cell-view')?.textContent.trim())),['09:00-13:01','预计 13:15-13:30','预计 14:10-14:35','15:00-预计17:00','预计 17:00-18:30','预计 18:30-21:00']);
     assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,6).map(row=>row.querySelector('td[data-label="活动"] .cell-view')?.textContent.trim())),[
       'G225 上海虹桥→长沙南',

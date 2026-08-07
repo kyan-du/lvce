@@ -107,6 +107,11 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.ok(zjjRows.includes('C7947 张家界西→长沙'));
     assert.ok(zjjRows.includes('G206 长沙南→上海虹桥'));
     assert.equal(zjjRows.some(name=>/G9679|芙蓉镇|C7769/.test(name)),false);
+    const desktopLayout=await page.locator('.itinerary-table').evaluate(table=>({heads:[...table.tHead.rows[0].cells].map(cell=>cell.textContent.trim()),rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').map(row=>({cells:row.cells.length,writing:[...row.cells].map(cell=>getComputedStyle(cell).writingMode)})),tableWidth:table.getBoundingClientRect().width,viewport:innerWidth}));
+    assert.deepEqual(desktopLayout.heads,['日期','时间','活动','位置','备注']);
+    assert.ok(desktopLayout.rows.every(row=>row.cells===5&&row.writing.every(mode=>mode==='horizontal-tb')),'desktop rows must be stable five-column rows or vertical dates');
+    assert.ok(desktopLayout.tableWidth<=desktopLayout.viewport,'desktop table must fit a 1180px viewport');
+    await page.screenshot({path:join(root,'docs/evidence/desktop-itinerary-stable-20260807.png'),fullPage:true});
     await page.setViewportSize({width:390,height:844});
     const mobileLayout=await page.locator('.itinerary-table').evaluate(table=>({tableWidth:table.getBoundingClientRect().width,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').slice(-7).map(row=>({display:getComputedStyle(row).display,dateWriting:[...row.querySelectorAll('[data-label="日期"]')].map(cell=>getComputedStyle(cell).writingMode),labels:[...row.cells].filter(cell=>getComputedStyle(cell).display!=='none').map(cell=>cell.dataset.label)}))}));
     assert.ok(mobileLayout.tableWidth<=mobileLayout.viewport&&mobileLayout.documentWidth<=mobileLayout.viewport,'mobile itinerary must not overflow horizontally');
@@ -117,8 +122,9 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.equal(await page.getByText('预计时段需预留 17:00 张家界西出发时间').count(),0);
     await page.locator('#tabs [data-tab="bookings"]').click();
     const tickets=await page.locator('.tickets-block tbody tr').evaluateAll(rows=>rows.map(row=>Array.from(row.querySelectorAll('.cell-view')).map(cell=>cell.textContent.trim())));
-    assert.deepEqual(tickets.map(row=>row.slice(0,3)),[['猛洞河漂流','待填写','待填写'],['天门山A线','2026-08-08','07:00-08:00']]);
-    assert.match(tickets[0][6],/拟定行程安排为 2026-08-07 下午/);
+    assert.deepEqual(tickets.map(row=>row.slice(0,3)),[['猛洞河漂流','2026-08-07',''],['天门山A线','2026-08-08','07:00-08:00']]);
+    assert.equal(tickets[0][3],'双人票×2（共4人）');
+    assert.equal(tickets[0][6],'预订成功');
     assert.match(tickets[1][6],/索道上山→天门洞快线索道下山/);
   }finally{
     await page.close();
