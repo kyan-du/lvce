@@ -49,20 +49,20 @@ test('zhangjiajie persisted itinerary migration fixes known stale rows and prese
   assert.equal(trip.itinerary.some(row=>row[0]==='2026-08-09'&&row.join('').includes('马王堆')),false,'8/9 Mawangdui duplicates must be removed from zhangjiajie');
   assert.ok(trip.itinerary.some(row=>row[2]==='用户自定义午餐'),'unrelated custom itinerary rows should be preserved');
   assert.ok(trip.itinerary.some(row=>row[2]==='用户自定义咖啡'),'same-date custom itinerary rows should be preserved');
-  assert.ok(trip.itinerary.some(row=>row[2]==='开福寺'),'unrelated default rows should be preserved');
+  assert.equal(trip.itinerary.some(row=>row[2]==='开福寺'),false,'8/9 is reserved for Jinbianxi and rail connections');
   for(const row of [ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW])assert.ok(trip.itinerary.some(actual=>actual.every((v,i)=>v===row[i])),`${row[2]} should be present`);
   assert.equal(trip.itinerary.some(row=>row[0]==='2026-08-07'&&row[2]==='天门山A线'),false,'8/7 Tianmen row must be removed');
   assert.equal(trip.itinerary.some(row=>row[0]==='2026-08-08'&&row[2]==='猛洞河漂流'),false,'8/8 Mengdong row must be removed');
-  assert.equal(trip.itinerary.filter(row=>row[2]==='G9679 张家界西→芙蓉镇').length,1,'G9679 must not be duplicated');
-  assert.equal(trip.itinerary.filter(row=>row[2]==='C7769 张家界西→长沙').length,1,'C7769 must not be duplicated');
-  assert.deepEqual(trip.transport,original.trips[0].transport,'explicit train rows should not be modified');
+  assert.equal(trip.itinerary.some(row=>row.join('').includes('G9679')||row.join('').includes('芙蓉镇')),false,'refunded G9679 and Furong transfer must be removed');
+  assert.equal(trip.transport.some(row=>['G9679','C7769'].includes(row[1])),false,'obsolete trains must be removed');
+  assert.ok(trip.transport.some(row=>row[1]==='C7947')&&trip.transport.some(row=>row[1]==='G206'),'replacement trains must be present');
   assert.deepEqual(trip.tickets[0].slice(0,7),ZHANGJIAJIE_MAWANGDUI_TICKET,'known old Mawangdui ticket row should be upgraded');
   assert.deepEqual(trip.tickets[1].slice(0,7),ZHANGJIAJIE_MENGDONG_TICKET,'Mengdong ticket should keep pending date/time and add planned date evidence note');
   assert.deepEqual(trip.tickets[2].slice(0,7),ZHANGJIAJIE_TIANMEN_TICKET,'Tianmen ticket should keep pending date/time and add planned date evidence note');
   assert.equal(trip.tickets[1][1],'待填写');
   assert.equal(trip.tickets[1][2],'待填写');
-  assert.equal(trip.tickets[2][1],'待填写');
-  assert.equal(trip.tickets[2][2],'待填写');
+  assert.equal(trip.tickets[2][1],'2026-08-08');
+  assert.equal(trip.tickets[2][2],'07:00-08:00');
   assert.deepEqual(result.data.trips.find(t=>t.id==='custom').itinerary,original.trips.find(t=>t.id==='custom').itinerary,'other trips must not be migrated');
 });
 

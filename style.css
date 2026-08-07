@@ -395,3 +395,21 @@ body.public-view header>div.brand{grid-column:1}
 @media print{.itinerary-day-summary .itinerary-date-cell>.cell-view{display:block}.itinerary-day-toggle{display:none}.itinerary-day-summary td:not(.itinerary-date-cell){display:table-cell}.itinerary-day-summary .itinerary-date-cell{width:auto}.itinerary-day-summary .itinerary-date-cell>.cell-view:empty::after{content:attr(data-print-date)}}
 .linked-row-highlight{animation:linked-row-pulse 2.4s ease-out;outline:3px solid #c49b38;outline-offset:-3px}.linked-row-highlight:focus{outline:3px solid #c49b38}@keyframes linked-row-pulse{0%,45%{background:#fff1b8}100%{background:transparent}}
 .tickets-block th:nth-child(11),.tickets-block td:nth-child(11){min-width:220px}.tickets-block th:nth-child(7),.tickets-block td:nth-child(7){min-width:240px}.public-view .tickets-block th:nth-child(9),.public-view .tickets-block td:nth-child(9),.public-view .tickets-block th:nth-child(12),.public-view .tickets-block td:nth-child(12),.tickets-block th:nth-child(13),.tickets-block td:nth-child(13){display:none}
+
+/* Mobile itinerary is a stack of self-contained cards, never a squeezed table. */
+@media(max-width:680px){
+  .itinerary-block .data-scroll{overflow:visible}
+  .itinerary-table,.itinerary-table tbody{display:block;width:100%;min-width:0}
+  .itinerary-table thead{display:none}
+  .itinerary-table tr{display:block;margin:0 0 12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 2px 8px #173c3210}
+  .itinerary-table td,.itinerary-table td.itinerary-date-cell,.itinerary-table td.mobile-itinerary-date-cell{display:grid;width:100%;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:7px 0;border:0;border-top:1px solid #edf0ee;text-align:left;vertical-align:top;white-space:normal;word-break:normal;overflow-wrap:anywhere}
+  .itinerary-table td:first-child{border-top:0;padding-top:0}
+  .itinerary-table td::before{content:attr(data-label);font-weight:700;color:var(--muted)}
+  .itinerary-table .cell-view{min-width:0;white-space:pre-line;writing-mode:horizontal-tb}
+  .itinerary-table .itinerary-date-cell{grid-template-columns:1fr}
+  .itinerary-table .itinerary-date-cell::before,.itinerary-table .mobile-itinerary-date-cell::before{display:none}
+  .itinerary-day-toggle{white-space:nowrap;writing-mode:horizontal-tb}
+  .itinerary-table .mobile-itinerary-date-cell{display:none!important}
+  .itinerary-day-summary{padding:8px 14px!important}
+  .editing .itinerary-table td{display:grid!important}
+}

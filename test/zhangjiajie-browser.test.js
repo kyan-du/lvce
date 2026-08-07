@@ -100,26 +100,26 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.match(itineraryText,/目标约16:30-16:35抵站/);
     assert.doesNotMatch(itineraryText,/14:40-16:20|取行李并退房|16:00-16:05|16:15-16:25|15:20开始返回|15:30离开|30-40分钟|50-55分钟/);
     const zjjRows=rows.filter(row=>row.date>='2026-08-06').map(row=>row.activity?.replace('查看预约 →','').trim());
-    assert.deepEqual(zjjRows,[
-      '天子山',
-      '金鞭溪缩短路线',
-      '金鞭溪后取行李并前往张家界西',
-      '用户自定义补给',
-      'G9679 张家界西→芙蓉镇',
-      '芙蓉镇站衔接猛洞河漂流',
-      '返回锦栖民宿(张家界高铁西站店)',
-      '天门山A线',
-      'C7769 张家界西→长沙'
-    ]);
-    assert.equal(zjjRows.filter(name=>name==='G9679 张家界西→芙蓉镇').length,1);
-    assert.equal(zjjRows.filter(name=>name==='C7769 张家界西→长沙').length,1);
+    assert.ok(zjjRows.includes('猛洞河漂流'));
+    assert.ok(zjjRows.includes('返回锦栖民宿(张家界高铁西站店)'));
+    assert.ok(zjjRows.includes('天门山A线'));
+    assert.ok(zjjRows.includes('金鞭溪'));
+    assert.ok(zjjRows.includes('C7947 张家界西→长沙'));
+    assert.ok(zjjRows.includes('G206 长沙南→上海虹桥'));
+    assert.equal(zjjRows.some(name=>/G9679|芙蓉镇|C7769/.test(name)),false);
+    await page.setViewportSize({width:390,height:844});
+    const mobileLayout=await page.locator('.itinerary-table').evaluate(table=>({tableWidth:table.getBoundingClientRect().width,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').slice(-7).map(row=>({display:getComputedStyle(row).display,dateWriting:[...row.querySelectorAll('[data-label="日期"]')].map(cell=>getComputedStyle(cell).writingMode),labels:[...row.cells].filter(cell=>getComputedStyle(cell).display!=='none').map(cell=>cell.dataset.label)}))}));
+    assert.ok(mobileLayout.tableWidth<=mobileLayout.viewport&&mobileLayout.documentWidth<=mobileLayout.viewport,'mobile itinerary must not overflow horizontally');
+    assert.ok(mobileLayout.rows.every(row=>row.display==='block'&&row.dateWriting.every(mode=>mode==='horizontal-tb')),'mobile itinerary rows must be cards with horizontal dates');
+    assert.ok(mobileLayout.rows.every(row=>['时间','活动','位置','备注'].every(label=>row.labels.includes(label))),'each mobile card must keep its fields grouped');
+    await page.screenshot({path:join(root,'docs/evidence/mobile-itinerary-cards-20260807.png'),fullPage:true});
     assert.equal(await page.getByText('原行程写下午天门山').count(),0);
     assert.equal(await page.getByText('预计时段需预留 17:00 张家界西出发时间').count(),0);
     await page.locator('#tabs [data-tab="bookings"]').click();
     const tickets=await page.locator('.tickets-block tbody tr').evaluateAll(rows=>rows.map(row=>Array.from(row.querySelectorAll('.cell-view')).map(cell=>cell.textContent.trim())));
-    assert.deepEqual(tickets.map(row=>row.slice(0,3)),[['猛洞河漂流','待填写','待填写'],['天门山A线','待填写','待填写']]);
+    assert.deepEqual(tickets.map(row=>row.slice(0,3)),[['猛洞河漂流','待填写','待填写'],['天门山A线','2026-08-08','07:00-08:00']]);
     assert.match(tickets[0][6],/拟定行程安排为 2026-08-07 下午/);
-    assert.match(tickets[1][6],/拟定行程安排为 2026-08-08 上午/);
+    assert.match(tickets[1][6],/索道上山→天门洞快线索道下山/);
   }finally{
     await page.close();
     await browser.close();
