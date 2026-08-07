@@ -1553,19 +1553,22 @@ test('past itinerary is one external collapsed section while today and future re
     assert.equal(await page.locator('.past-itinerary summary').innerText(),'过去的行程\n共 2 项\n⌄');
     assert.equal(await page.locator('.itinerary-day-summary,.itinerary-day-collapsed,.itinerary-day-toggle').count(),0,'daily collapse placeholders must not exist in tables');
     assert.equal(await page.locator('.itinerary-current .itinerary-day-group').count(),2,'today and future remain continuously visible as date groups');
-    assert.deepEqual(await page.locator('.itinerary-current .itinerary-day-heading h3').allTextContents(),['8月7日 周五','8月8日 周六']);
-    assert.equal(await page.locator('.itinerary-block td[data-label="日期"],.itinerary-block th:text-is("日期")').count(),0,'data tables have no date column');
-    assert.equal(await page.locator('.itinerary-day-heading button,.itinerary-day-group details').count(),0,'date headings are static and never daily collapsibles');
+    assert.deepEqual(await page.locator('.itinerary-current td[data-label="日期"] strong').allTextContents(),['8月7日 周五','8月8日 周六']);
+    assert.deepEqual(await page.locator('.itinerary-current td[data-label="日期"]').evaluateAll(cells=>cells.map(cell=>({rowspan:cell.rowSpan,text:cell.innerText.trim()}))),[{rowspan:1,text:'8月7日 周五\n2026年'},{rowspan:1,text:'8月8日 周六\n2026年'}],'each day has one merged date cell');
+    assert.deepEqual(await page.locator('.itinerary-current thead').first().locator('th').allTextContents(),['日期','时间','活动','位置','备注'],'wide itinerary is a five-column table');
+    assert.equal(await page.locator('.itinerary-day-heading,.itinerary-day-group details').count(),0,'dates are table cells and never daily collapsibles');
     await page.setViewportSize({width:1440,height:1000});
     await page.screenshot({path:join(root,'docs/evidence/itinerary-date-groups-desktop-20260807.png'),fullPage:true});
     await page.setViewportSize({width:390,height:844});
     await page.screenshot({path:join(root,'docs/evidence/itinerary-date-groups-mobile-20260807.png'),fullPage:true});
     await page.locator('.past-itinerary summary').click();
     assert.equal(await page.locator('.past-itinerary tbody tr').count(),2,'expanding reveals all past items');
-    assert.deepEqual(await page.locator('.past-itinerary tbody tr').evaluateAll(rows=>rows.map(row=>row.children.length)),[4,4],'every read-only past row has the stable four-column shape');
+    assert.equal(await page.locator('.past-itinerary td[data-label="日期"]').count(),1,'same-day past rows share one date cell');
+    assert.equal(await page.locator('.past-itinerary td[data-label="日期"]').getAttribute('rowspan'),'2');
+    assert.deepEqual(await page.locator('.past-itinerary tbody tr').evaluateAll(rows=>rows.map(row=>row.children.length)),[5,4],'rowspan makes the first row five cells and following rows four');
     await page.locator('summary[aria-label="更多操作"]').click();
     await page.getByRole('button',{name:'修改',exact:true}).click();
-    assert.equal(await page.locator('.past-itinerary textarea[aria-label="日期"]').count(),1,'one date editor belongs to the past date group heading');
+    assert.equal(await page.locator('.past-itinerary textarea[aria-label="日期"]').count(),1,'one shared date editor belongs to the merged date cell');
     assert.equal(await page.locator('.past-itinerary .remove-row').count(),2,'past rows retain delete controls');
   }finally{await page.close();document.trips[0].itinerary=oldItinerary;document.tab=oldTab}
 });
