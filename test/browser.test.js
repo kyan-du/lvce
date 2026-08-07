@@ -1552,14 +1552,20 @@ test('past itinerary is one external collapsed section while today and future re
     assert.equal(await page.locator('.past-itinerary').getAttribute('open'),null,'past section starts collapsed');
     assert.equal(await page.locator('.past-itinerary summary').innerText(),'过去的行程\n共 2 项\n⌄');
     assert.equal(await page.locator('.itinerary-day-summary,.itinerary-day-collapsed,.itinerary-day-toggle').count(),0,'daily collapse placeholders must not exist in tables');
-    assert.equal(await page.locator('.itinerary-current tbody tr').count(),2,'today and future remain continuously visible');
-    assert.deepEqual(await page.locator('.itinerary-current td[data-label="日期"] .cell-view').allTextContents(),['2026-08-07','2026-08-08']);
+    assert.equal(await page.locator('.itinerary-current .itinerary-day-group').count(),2,'today and future remain continuously visible as date groups');
+    assert.deepEqual(await page.locator('.itinerary-current .itinerary-day-heading h3').allTextContents(),['8月7日 周五','8月8日 周六']);
+    assert.equal(await page.locator('.itinerary-block td[data-label="日期"],.itinerary-block th:text-is("日期")').count(),0,'data tables have no date column');
+    assert.equal(await page.locator('.itinerary-day-heading button,.itinerary-day-group details').count(),0,'date headings are static and never daily collapsibles');
+    await page.setViewportSize({width:1440,height:1000});
+    await page.screenshot({path:join(root,'docs/evidence/itinerary-date-groups-desktop-20260807.png'),fullPage:true});
+    await page.setViewportSize({width:390,height:844});
+    await page.screenshot({path:join(root,'docs/evidence/itinerary-date-groups-mobile-20260807.png'),fullPage:true});
     await page.locator('.past-itinerary summary').click();
     assert.equal(await page.locator('.past-itinerary tbody tr').count(),2,'expanding reveals all past items');
-    assert.deepEqual(await page.locator('.past-itinerary tbody tr').evaluateAll(rows=>rows.map(row=>row.children.length)),[5,5],'every read-only past row has the stable five-column shape');
+    assert.deepEqual(await page.locator('.past-itinerary tbody tr').evaluateAll(rows=>rows.map(row=>row.children.length)),[4,4],'every read-only past row has the stable four-column shape');
     await page.locator('summary[aria-label="更多操作"]').click();
     await page.getByRole('button',{name:'修改',exact:true}).click();
-    assert.equal(await page.locator('.past-itinerary textarea[aria-label="日期"]').count(),2,'past rows remain editable');
+    assert.equal(await page.locator('.past-itinerary textarea[aria-label="日期"]').count(),1,'one date editor belongs to the past date group heading');
     assert.equal(await page.locator('.past-itinerary .remove-row').count(),2,'past rows retain delete controls');
   }finally{await page.close();document.trips[0].itinerary=oldItinerary;document.tab=oldTab}
 });
