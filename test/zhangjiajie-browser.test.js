@@ -109,7 +109,7 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.ok(zjjRows.includes('G4312 长沙南→南昌西'));
     assert.ok(zjjRows.includes('G1384 南昌→上饶'));
     assert.ok(zjjRows.includes('G1384 杭州东→上海南'));
-    assert.ok(zjjRows.includes('G1382 南昌→待确认'));
+    assert.ok(zjjRows.includes('G1382 南昌→上海虹桥'));
     assert.equal(zjjRows.includes('G206 长沙南→上海虹桥'),false);
     assert.equal(zjjRows.some(name=>/G9679|芙蓉镇|C7769/.test(name)),false);
     const desktopLayout=await page.locator('.itinerary-block .itinerary-table').first().evaluate(table=>({heads:[...table.tHead.rows[0].cells].map(cell=>cell.textContent.trim()),rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').map(row=>({cells:row.cells.length,writing:[...row.cells].map(cell=>getComputedStyle(cell).writingMode)})),tableWidth:table.getBoundingClientRect().width,viewport:innerWidth}));
