@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_AUG5_ROWS,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_CHANGSHA_TRANSFER,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET,ZHANGJIAJIE_C7947_ROW,ZHANGJIAJIE_G206_ROW,ZHANGJIAJIE_G4312_ROW,ZHANGJIAJIE_G1384_NANCHANG_ROW,ZHANGJIAJIE_G1384_HANGZHOU_ROW,ZHANGJIAJIE_G1384_SHANGRAO_ROW,ZHANGJIAJIE_G1382_AUG10_ROW,ZHANGJIAJIE_G1382_AUG11_ROW,ZHANGJIAJIE_G4312_ITINERARY,ZHANGJIAJIE_G1384_SHANGRAO_ITINERARY,ZHANGJIAJIE_G1382_AUG11_ITINERARY} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_AUG5_ROWS,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_CHANGSHA_TRANSFER,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET,ZHANGJIAJIE_C7947_ROW,ZHANGJIAJIE_G206_ROW,ZHANGJIAJIE_G4312_ROW,ZHANGJIAJIE_G1384_NANCHANG_ROW,ZHANGJIAJIE_G1384_HANGZHOU_ROW,ZHANGJIAJIE_G1384_SHANGRAO_ROW,ZHANGJIAJIE_G1382_AUG10_ROW,ZHANGJIAJIE_G1382_AUG11_ROW,ZHANGJIAJIE_G4312_ITINERARY,ZHANGJIAJIE_G1384_SHANGRAO_ITINERARY,ZHANGJIAJIE_G1382_AUG11_ITINERARY,QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW,QIANTANG_NANHU_HOTEL,QIANTANG_ATOUR_HOTEL,QIANTANG_HANTING_HOTEL,QIANTANG_ITINERARY_ROWS,QIANTANG_TRIP_MIGRATION,buildQiantangTrip} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
 const b=v=>Buffer.from(v).toString('base64url');
 test('PBKDF2 password verification',async()=>{const salt=Buffer.from('0123456789abcdef'),hash=`pbkdf2-sha256$100000$${b(salt)}$${b(pbkdf2Sync('hello',salt,100000,32,'sha256'))}`;assert.equal(await verifyPassword('hello',hash),true);assert.equal(await verifyPassword('no',hash),false)});
 test('signed session carries server-verifiable id, expires and rejects tampering',async()=>{const token=await makeSession('long random secret',0,'session-1');assert.equal((await readSession(token,'long random secret',1000)).sid,'session-1');assert.equal(await verifySession(token,'long random secret',1000),true);assert.equal(await verifySession(token+'x','long random secret',1000),false);assert.equal(await verifySession(token,'long random secret',31*864e5),false)});
@@ -85,6 +85,9 @@ test('zhangjiajie persisted itinerary migration fixes known stale rows and prese
   assert.equal(trip.tickets[2][1],'2026-08-08');
   assert.equal(trip.tickets[2][2],'07:00-08:00');
   assert.deepEqual(result.data.trips.find(t=>t.id==='custom').itinerary,original.trips.find(t=>t.id==='custom').itinerary,'other trips must not be migrated');
+  const qiantang=result.data.trips.find(t=>t.id==='qiantang');
+  assert.ok(qiantang,'missing qiantang trip should be inserted');
+  assert.equal(qiantang.name,'钱江潮');
 });
 
 test('zhangjiajie persisted itinerary migration is idempotent',()=>{
@@ -229,7 +232,10 @@ test('legacy booking details migrate into ticket and transport sources without d
   assert.ok(first.tickets.some(row=>row[0]==='自定义预订'&&row[7]==='自定义平台'&&row[8]==='CUSTOM-1'&&row[11]==='私密'&&row[12]==='custom'));
   assert.ok(first.itineraryLinks.some(x=>x.targetType==='ticket'&&x.targetId==='ticket-mawangdui-20260805'));
   assert.ok(first.itineraryLinks.some(x=>x.targetType==='transport'&&x.targetId==='transport:0'));
-  assert.equal(migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).changed,false);
+  const second=migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]});
+  assert.deepEqual(second.data.trips[0],first,'zhangjiajie trip should stay stable while qiantang is inserted');
+  assert.ok(second.data.trips.some(t=>t.id==='qiantang'));
+  assert.equal(migrateTripDocument(second.data).changed,false);
 });
 
 test('zhangjiajie Ctrip details live in five ticket rows and remain idempotent',()=>{
@@ -244,6 +250,44 @@ test('zhangjiajie Ctrip details live in five ticket rows and remain idempotent',
   assert.equal(first.bookingDetails,undefined);
   const second=migrateTripDocument({active:'zhangjiajie',tab:'itinerary',trips:[first]}).data.trips[0];
   assert.deepEqual(second,first);
+});
+
+test('qiantang trip is inserted and filled from screenshot bookings',()=>{
+  const original={active:'zhangjiajie',tab:'bookings',trips:[{id:'zhangjiajie',name:'湘行记',categories:[],itinerary:[],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
+  const result=migrateTripDocument(original);
+  assert.equal(result.changed,true);
+  assert.ok(result.migrations.includes(QIANTANG_TRIP_MIGRATION));
+  const trip=result.data.trips.find(t=>t.id==='qiantang');
+  assert.equal(trip.name,'钱江潮');
+  assert.equal(trip.meta,'2026年9月 · 嘉兴／海宁');
+  assert.deepEqual(trip.transport,[QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW]);
+  assert.deepEqual(trip.hotels,[QIANTANG_NANHU_HOTEL,QIANTANG_ATOUR_HOTEL,QIANTANG_HANTING_HOTEL]);
+  assert.deepEqual(trip.itinerary,QIANTANG_ITINERARY_ROWS);
+  assert.equal(trip.categories.length,0);
+  assert.equal(trip.tickets.length,0);
+  assert.equal(trip.transport.find(row=>row[1]==='G7305')[2].includes('杜明远'),false);
+  assert.equal(/¥\d/.test(trip.transport.find(row=>row[1]==='G1347')[2].split('\n').find(line=>line.includes('胡丽霞'))||''),false);
+  assert.equal(/¥\d/.test(trip.transport.find(row=>row[1]==='C406')[2].split('\n').find(line=>line.includes('胡丽霞'))||''),false);
+  assert.equal(JSON.stringify(trip).includes('盐官')||JSON.stringify(trip).includes('八堡')||JSON.stringify(trip).includes('老盐仓'),false);
+  assert.equal(JSON.stringify(trip.itinerary).includes('短信未给出')||JSON.stringify(trip.itinerary).includes('不猜测')||JSON.stringify(trip.itinerary).includes('截图未显示'),false);
+  assert.equal(trip.hotels.filter(row=>row[1]==='2026-09-24').length,2,'both Jiaxing hotels stay booked for the same night');
+  assert.match(trip.hotels.find(row=>row[0].includes('亚朵'))[5],/与另一家嘉兴酒店同夜/);
+  assert.equal(validateDocument(result.data),null);
+  assert.equal(migrateTripDocument(result.data).changed,false);
+  assert.deepEqual(buildQiantangTrip().transport,trip.transport);
+});
+
+test('existing incomplete qiantang trip is updated in place without duplicating',()=>{
+  const original={active:'qiantang',tab:'bookings',trips:[{id:'qiantang',name:'旧名',meta:'',categories:[],itinerary:[],transport:[['铁路（4张）','G1347','旧座位','2026-09-24','上海南','17:23','嘉兴南','17:53','E292090250']],hotels:[],tickets:[],emergency:[],tour:[]},{id:'custom',name:'自定义旅行',categories:[],itinerary:[['keep']],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
+  const result=migrateTripDocument(original);
+  assert.equal(result.changed,true);
+  assert.equal(result.data.trips.filter(t=>t.id==='qiantang').length,1);
+  const trip=result.data.trips.find(t=>t.id==='qiantang');
+  assert.equal(trip.name,'钱江潮');
+  assert.deepEqual(trip.transport.find(row=>row[1]==='G1347'),QIANTANG_G1347_ROW);
+  assert.deepEqual(trip.transport.find(row=>row[1]==='C406'),QIANTANG_C406_ROW);
+  assert.deepEqual(result.data.trips.find(t=>t.id==='custom').itinerary,[['keep']]);
+  assert.equal(migrateTripDocument(result.data).changed,false);
 });
 
 test('public trip share strips booking order numbers and private auxiliary codes',async()=>{
