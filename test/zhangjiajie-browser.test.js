@@ -57,7 +57,7 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     await page.goto(base);
     await page.waitForSelector('.past-itinerary');
     assert.equal(await page.locator('.past-itinerary').count(),1);
-    await page.locator('.past-itinerary summary').click();
+    assert.notEqual(await page.locator('.past-itinerary').getAttribute('open'),null,'finished trip past itinerary starts expanded');
     const rows=await page.locator('.itinerary-day-group').evaluateAll(groups=>groups.flatMap(group=>{
       const date=group.dataset.date||'';
       return [...group.querySelectorAll('tbody tr')].map(row=>{
@@ -116,11 +116,9 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.deepEqual(desktopLayout.heads,['时间','活动','位置','备注']);
     assert.ok(desktopLayout.rows.every(row=>row.cells===4&&row.writing.every(mode=>mode==='horizontal-tb')),'desktop rows must be stable four-column rows');
     assert.ok(desktopLayout.tableWidth<=desktopLayout.viewport,'desktop table must fit a 1440px viewport');
-    await page.locator('.past-itinerary summary').click();
-    assert.equal(await page.locator('.past-itinerary').getAttribute('open'),null,'past itinerary should be collapsed in the acceptance screenshot');
+    assert.notEqual(await page.locator('.past-itinerary').getAttribute('open'),null,'finished trip screenshot keeps past itinerary expanded');
     await page.screenshot({path:join(root,'docs/evidence/past-itinerary-section-desktop-20260807.png'),fullPage:true});
     await page.setViewportSize({width:390,height:844});
-    await page.locator('.past-itinerary summary').click();
     const mobileLayout=await page.locator('.itinerary-block .itinerary-table').first().evaluate(table=>({tableWidth:table.getBoundingClientRect().width,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').slice(-7).map(row=>({display:getComputedStyle(row).display,labels:[...row.cells].filter(cell=>getComputedStyle(cell).display!=='none').map(cell=>cell.dataset.label)}))}));
     assert.ok(mobileLayout.tableWidth<=mobileLayout.viewport&&mobileLayout.documentWidth<=mobileLayout.viewport,'mobile itinerary must not overflow horizontally');
     assert.ok(mobileLayout.rows.every(row=>row.display==='block'),'mobile itinerary rows must be cards');

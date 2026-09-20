@@ -1519,7 +1519,8 @@ test('xiangxingji August 4 itinerary keeps taxi legs plus Orange Isle evening sp
     await page.close();
     page=await browser.newPage({viewport:{width:390,height:844}});
     await page.goto(base);
-    if(await page.locator('.past-itinerary').count())await page.locator('.past-itinerary summary').click();
+    const past=page.locator('.past-itinerary');
+    if(await past.count()&&await past.getAttribute('open')===null)await past.locator('summary').click();
     assert.deepEqual(await page.locator('.itinerary-day-group').evaluateAll(groups=>groups.map(group=>group.dataset.date)),['2026-08-04','2026-08-05'],'mobile itinerary should group same-day rows under date headings');
     assert.equal(await page.locator('.itinerary-day-group[data-date="2026-08-04"] tbody tr').count(),6);
     await page.screenshot({path:join(root,'docs/evidence','local-xiangxingji-responsive-dates-mobile-20260804.png'),fullPage:true});
@@ -1564,5 +1565,22 @@ test('past itinerary is one external collapsed section while today and future re
     await page.getByRole('button',{name:'修改',exact:true}).click();
     assert.equal(await page.locator('.past-itinerary textarea[aria-label="日期"]').count(),1,'one date editor belongs to the past date group heading');
     assert.equal(await page.locator('.past-itinerary .remove-row').count(),2,'past rows retain delete controls');
+  }finally{await page.close();document.trips[0].itinerary=oldItinerary;document.tab=oldTab}
+});
+
+test('past itinerary starts expanded when the trip has no today or future items',async()=>{
+  const oldItinerary=structuredClone(document.trips[0].itinerary),oldTab=document.tab;
+  document.tab='itinerary';
+  document.trips[0].itinerary=[
+    ['2026-08-06','09:00','过去一','旧地','联系人','旧备注'],
+    ['2026-08-06','10:00','过去二','旧地','联系人','旧备注']
+  ];
+  const page=await pageWithMockedNow('2026-08-07T04:00:00.000Z');
+  try{
+    await page.goto(base);
+    assert.equal(await page.locator('.past-itinerary').count(),1,'finished trip still uses one past itinerary section');
+    assert.notEqual(await page.locator('.past-itinerary').getAttribute('open'),null,'finished trip past itinerary starts expanded');
+    assert.equal(await page.locator('.itinerary-current .empty').innerText(),'暂无今天或未来行程');
+    assert.equal(await page.locator('.past-itinerary tbody tr').count(),2,'past items are visible without clicking');
   }finally{await page.close();document.trips[0].itinerary=oldItinerary;document.tab=oldTab}
 });
