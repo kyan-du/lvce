@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_AUG5_ROWS,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_CHANGSHA_TRANSFER,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET,ZHANGJIAJIE_C7947_ROW,ZHANGJIAJIE_G206_ROW,ZHANGJIAJIE_G4312_ROW,ZHANGJIAJIE_G1384_NANCHANG_ROW,ZHANGJIAJIE_G1384_HANGZHOU_ROW,ZHANGJIAJIE_G1384_SHANGRAO_ROW,ZHANGJIAJIE_G1382_AUG10_ROW,ZHANGJIAJIE_G1382_AUG11_ROW,ZHANGJIAJIE_G4312_ITINERARY,ZHANGJIAJIE_G1384_SHANGRAO_ITINERARY,ZHANGJIAJIE_G1382_AUG11_ITINERARY,QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW,QIANTANG_NANHU_HOTEL,QIANTANG_ATOUR_HOTEL,QIANTANG_HANTING_HOTEL,QIANTANG_ITINERARY_ROWS,QIANTANG_TRIP_MIGRATION,QIANTANG_READINGS,QIANTANG_PACKING,buildQiantangTrip} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_AUG5_ROWS,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_CHANGSHA_TRANSFER,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET,ZHANGJIAJIE_C7947_ROW,ZHANGJIAJIE_G206_ROW,ZHANGJIAJIE_G4312_ROW,ZHANGJIAJIE_G1384_NANCHANG_ROW,ZHANGJIAJIE_G1384_HANGZHOU_ROW,ZHANGJIAJIE_G1384_SHANGRAO_ROW,ZHANGJIAJIE_G1382_AUG10_ROW,ZHANGJIAJIE_G1382_AUG11_ROW,ZHANGJIAJIE_G4312_ITINERARY,ZHANGJIAJIE_G1384_SHANGRAO_ITINERARY,ZHANGJIAJIE_G1382_AUG11_ITINERARY,QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW,QIANTANG_NANHU_HOTEL,QIANTANG_ATOUR_HOTEL,QIANTANG_HANTING_HOTEL,QIANTANG_ITINERARY_ROWS,QIANTANG_V1_ITINERARY_ROWS,QIANTANG_TRIP_MIGRATION,QIANTANG_READINGS,QIANTANG_PACKING,buildQiantangTrip} from '../lib/trips.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
 const b=v=>Buffer.from(v).toString('base64url');
 test('PBKDF2 password verification',async()=>{const salt=Buffer.from('0123456789abcdef'),hash=`pbkdf2-sha256$100000$${b(salt)}$${b(pbkdf2Sync('hello',salt,100000,32,'sha256'))}`;assert.equal(await verifyPassword('hello',hash),true);assert.equal(await verifyPassword('no',hash),false)});
 test('signed session carries server-verifiable id, expires and rejects tampering',async()=>{const token=await makeSession('long random secret',0,'session-1');assert.equal((await readSession(token,'long random secret',1000)).sid,'session-1');assert.equal(await verifySession(token,'long random secret',1000),true);assert.equal(await verifySession(token+'x','long random secret',1000),false);assert.equal(await verifySession(token,'long random secret',31*864e5),false)});
@@ -303,6 +303,27 @@ test('existing incomplete qiantang trip is filled in place without duplicating o
   assert.equal(corrected.changed,true);
   assert.equal(corrected.data.trips[0].hotels.find(row=>row[0]===QIANTANG_NANHU_HOTEL[0])[5],QIANTANG_NANHU_HOTEL[5]);
   assert.equal(migrateTripDocument(corrected.data).changed,false);
+});
+
+test('v1 qiantang itinerary is refreshed, sorted and keeps genuine hand edits',()=>{
+  const original={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_V1_ITINERARY_ROWS.map(row=>row.slice()),transport:[QIANTANG_G1347_ROW.slice(),QIANTANG_G7305_ROW.slice(),QIANTANG_C406_ROW.slice()],hotels:[QIANTANG_NANHU_HOTEL.slice(),QIANTANG_ATOUR_HOTEL.slice(),QIANTANG_HANTING_HOTEL.slice()],tickets:[],emergency:[['胡丽霞','186 **** 5057','紧急联系人'],['杜万','185 **** 6420','紧急联系人']],tour:[],readings:[{id:'yuelu-mountain',title:'岳麓山',source:'/assets/readings/yuelu-mountain.md'},{id:'keep-custom',title:'自订旅读',source:'/assets/readings/custom.md'}]}]};
+  const result=migrateTripDocument(original);
+  assert.equal(result.changed,true);
+  const trip=result.data.trips[0];
+  assert.deepEqual(trip.itinerary.map(row=>row[2]),QIANTANG_ITINERARY_ROWS.map(row=>row[2]));
+  assert.deepEqual(trip.itinerary.filter(row=>row[0]==='2026-09-25').map(row=>row[2]),['南湖环湖并坐船登湖心岛／烟雨楼','子城过渡','月河历史街区','G7305 嘉兴南→海宁西','入住汉庭海宁盐仓酒店']);
+  assert.deepEqual(trip.itinerary.filter(row=>row[0]==='2026-09-26').map(row=>row[2]),['老盐仓观潮','前往海宁站（硖石）','C406 海宁→上海南']);
+  const g7305=trip.itinerary.find(row=>row[2]==='G7305 嘉兴南→海宁西');
+  assert.match(g7305[5],/杜明远免票随行/);
+  assert.match(g7305[5],/海宁西在许村/);
+  assert.match(trip.itinerary.find(row=>row[2]==='入住汉庭海宁盐仓酒店')[3],/老盐仓/);
+  assert.equal(trip.itinerary.some(row=>row[2]==='入住嘉兴'),false);
+  assert.deepEqual(trip.readings.map(row=>row.id),['keep-custom',...QIANTANG_READINGS.map(row=>row.id)]);
+  const edited={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_V1_ITINERARY_ROWS.map(row=>row[2]==='G7305 嘉兴南→海宁西'?['2026-09-25','手改发车','G7305 嘉兴南→海宁西','嘉兴南／海宁西','胡丽霞','手改备注']:row.slice()),transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
+  const kept=migrateTripDocument(edited).data.trips[0].itinerary.find(row=>row[2]==='G7305 嘉兴南→海宁西');
+  assert.equal(kept[1],'手改发车');
+  assert.equal(kept[5],'手改备注');
+  assert.equal(migrateTripDocument(result.data).changed,false);
 });
 
 test('public trip share strips booking order numbers and private auxiliary codes',async()=>{

@@ -1212,7 +1212,7 @@ test('mobile itinerary and booking cell editors keep text readable',async()=>{
   await page.getByRole('button',{name:'修改',exact:true}).click();
   await page.waitForFunction(()=>document.body.classList.contains('editing'));
 
-  assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),1,'editing should keep a date editor for each itinerary day group');
+  assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),await page.locator('.itinerary-day-group').count(),'editing should keep a date editor for each itinerary day group');
   assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing should not expose the itinerary contact field');
   const itineraryEditor=page.locator('.itinerary-block textarea[aria-label="活动"]').first();
   await assertReadableCellEditor(itineraryEditor,'mobile itinerary');
@@ -1343,7 +1343,7 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     await assertTripMenuDismissal(page,name);
     assert.equal(await page.locator('.itinerary-block .section-title h2').evaluate(el=>getComputedStyle(el).display),'none','redundant itinerary heading is visible');
     assert.equal(await page.locator('.itinerary-day-row').count(),0,'itinerary must not render synthetic day header rows');
-    assert.deepEqual(await page.locator('.itinerary-block thead th').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['时间','活动','位置','备注'],'itinerary should only show the requested four columns');
+    assert.deepEqual(await page.locator('.itinerary-current .itinerary-day-group').first().locator('thead th').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['时间','活动','位置','备注'],'itinerary should only show the requested four columns');
     assert.equal(await page.locator('.itinerary-block [data-label="联系人"]').count(),0,'itinerary contact column must not be rendered');
     assert.equal(await page.locator('.itinerary-block tbody tr').first().locator('td').count(),4,'first itinerary row should render four cells');
     assert.equal(await page.locator('.itinerary-block td[data-label="日期"],.itinerary-block th:text-is("日期")').count(),0,'data tables have no date column');
@@ -1353,7 +1353,7 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     await page.locator('summary[aria-label="更多操作"]').click();
     await page.locator('#editTrip').click();
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing itinerary must not expose contact editors');
-    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),1,'editing itinerary should keep one date editor per day group');
+    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),await page.locator('.itinerary-day-group').count(),'editing itinerary should keep one date editor per day group');
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="备注"]').first().inputValue(),'备注','itinerary notes editor must use row index 5');
     await page.locator('.itinerary-block .section-title button').evaluate(button=>button.click());
     await page.locator('#saveEdit').click();
