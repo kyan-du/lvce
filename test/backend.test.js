@@ -277,17 +277,24 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.deepEqual(buildQiantangTrip().transport,trip.transport);
 });
 
-test('existing incomplete qiantang trip is updated in place without duplicating',()=>{
-  const original={active:'qiantang',tab:'bookings',trips:[{id:'qiantang',name:'旧名',meta:'',categories:[],itinerary:[],transport:[['铁路（4张）','G1347','旧座位','2026-09-24','上海南','17:23','嘉兴南','17:53','E292090250']],hotels:[],tickets:[],emergency:[],tour:[]},{id:'custom',name:'自定义旅行',categories:[],itinerary:[['keep']],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
+test('existing incomplete qiantang trip is filled in place without duplicating or overwriting edits',()=>{
+  const original={active:'qiantang',tab:'bookings',trips:[{id:'qiantang',name:'旧名',meta:'',categories:[],itinerary:[['2026-09-24','手改时间','G1347 上海南→嘉兴南','上海南／嘉兴南','胡丽霞','手改备注']],transport:[['铁路（4张）','G1347','用户手改座位','2026-09-24','上海南','17:23','嘉兴南','17:53','E292090250']],hotels:[],tickets:[],emergency:[],tour:[]},{id:'custom',name:'自定义旅行',categories:[],itinerary:[['keep']],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
   const result=migrateTripDocument(original);
   assert.equal(result.changed,true);
   assert.equal(result.data.trips.filter(t=>t.id==='qiantang').length,1);
   const trip=result.data.trips.find(t=>t.id==='qiantang');
-  assert.equal(trip.name,'钱江潮');
-  assert.deepEqual(trip.transport.find(row=>row[1]==='G1347'),QIANTANG_G1347_ROW);
+  assert.equal(trip.name,'旧名','existing trip name must be preserved');
+  assert.equal(trip.meta,'2026年9月 · 嘉兴／海宁');
+  assert.equal(trip.transport.find(row=>row[1]==='G1347')[2],'用户手改座位');
   assert.deepEqual(trip.transport.find(row=>row[1]==='C406'),QIANTANG_C406_ROW);
+  assert.equal(trip.itinerary.find(row=>row[2]==='G1347 上海南→嘉兴南')[1],'手改时间');
   assert.deepEqual(result.data.trips.find(t=>t.id==='custom').itinerary,[['keep']]);
   assert.equal(migrateTripDocument(result.data).changed,false);
+  const stale={active:'qiantang',tab:'bookings',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_ITINERARY_ROWS.map(row=>row.slice()),transport:[QIANTANG_G1347_ROW.slice(),QIANTANG_G7305_ROW.slice(),QIANTANG_C406_ROW.slice()],hotels:[[...QIANTANG_NANHU_HOTEL.slice(0,5),'高级双床房 1间；26㎡；2张1.2*2米床；外景窗；早餐赠1份（限金会员入住）；入住 14:00、离店 14:00；9月24日 20:00前可免费取消；与另一家嘉兴酒店同夜',...QIANTANG_NANHU_HOTEL.slice(6)],QIANTANG_ATOUR_HOTEL.slice(),QIANTANG_HANTING_HOTEL.slice()],tickets:[],emergency:[['胡丽霞','186 **** 5057','紧急联系人'],['杜万','185 **** 6420','紧急联系人']],tour:[]}]};
+  const corrected=migrateTripDocument(stale);
+  assert.equal(corrected.changed,true);
+  assert.equal(corrected.data.trips[0].hotels.find(row=>row[0]===QIANTANG_NANHU_HOTEL[0])[5],QIANTANG_NANHU_HOTEL[5]);
+  assert.equal(migrateTripDocument(corrected.data).changed,false);
 });
 
 test('public trip share strips booking order numbers and private auxiliary codes',async()=>{
