@@ -46,7 +46,7 @@ const newDefaultReadings=[
 ];
 const appSource=readFileSync(join(root,'app.js'),'utf8');
 const defaultReadings=Function(`return ${appSource.match(/const defaultReadings=(\[.*?\]);/s)[1]}`)();
-const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注'],[tomorrow,'09:00','明日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[...defaultReadings,{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注'],[tomorrow,'09:00','明日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人'],['同事','137 **** 2222','自定义备注','137 0000 2222']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[...defaultReadings,{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
 function pngSize(buffer){
   assert.equal(buffer.toString('ascii',1,4),'PNG','asset is not a PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20),colorType:buffer[25]};
@@ -637,11 +637,13 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   await page.locator('#tabs [data-tab="bookings"]').click();
   const privatePhoneCell=page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').first();
   assert.equal((await privatePhoneCell.textContent()).replace('复制','').trim(),'139 0000 0000','logged-in app should show the full emergency phone');
-  await page.locator('.booking-grid .table-block').last().locator('button[aria-label="复制电话"]').click();
+  await page.locator('.booking-grid .table-block').last().locator('tbody tr').first().locator('button[aria-label="复制电话"]').click();
   assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'139 0000 0000','logged-in copy should use the full emergency phone');
   const legacyPrivatePhoneCell=page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').nth(1);
   assert.equal((await legacyPrivatePhoneCell.textContent()).trim(),'待补全完整号码','logged-in app should not render a masked-only emergency phone as if it were complete');
   assert.equal(await legacyPrivatePhoneCell.locator('button[aria-label="复制电话"]').count(),0,'logged-in copy should not copy masked-only emergency phones');
+  const customNoteCell=page.locator('.booking-grid .table-block').last().locator('td[data-label="备注"] .cell-view');
+  assert.deepEqual(await customNoteCell.evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['','','自定义备注'],'exact default 紧急联系人 notes should be stripped while custom notes stay');
 
   await page.locator('#tabs [data-tab="reading"]').click();
   assert.equal(await page.locator('.reading-card').count(),11,'normalization should keep existing readings and all default source readings');
@@ -862,8 +864,74 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   await page.waitForSelector('tr.today');
   await page.locator('#tabs [data-tab="bookings"]').click();
   const publicPhones=await page.locator('.booking-grid .table-block').last().locator('td[data-label="电话"] .cell-view').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim()));
-  assert.deepEqual(publicPhones,['139 **** 0000','186 **** 5057'],'public share should keep emergency phones masked');
+  assert.deepEqual(publicPhones,['139 **** 0000','186 **** 5057','137 **** 2222'],'public share should keep emergency phones masked');
+  assert.equal(JSON.stringify(publicPhones).includes('0000 0000')||JSON.stringify(publicPhones).includes('0000 2222'),false,'public share must not render full emergency phones');
   await page.close();
+});
+
+test('emergency phone editors bind the full number, persist both fields, and cannot revive a cleared value from a mask',async()=>{
+  putBodies=[];
+  const oldEmergency=structuredClone(document.trips[0].emergency);
+  document.trips[0].emergency=[
+    ['家人','139 **** 0000','紧急联系人','139 0000 0000'],
+    ['胡丽霞','186 **** 5057','紧急联系人'],
+    ['同事','137 **** 2222','自定义备注','137 0000 2222']
+  ];
+  const context=await browser.newContext({viewport:{width:1024,height:800}});
+  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:base});
+  const page=await context.newPage();
+  try{
+    await page.goto(base);
+    await page.waitForSelector('tr.today');
+    await page.locator('#tabs [data-tab="bookings"]').click();
+    const emergency=page.locator('.booking-grid .table-block').last();
+    assert.equal((await emergency.locator('td[data-label="电话"] .cell-view').first().textContent()).replace('复制','').trim(),'139 0000 0000');
+    assert.equal((await emergency.locator('td[data-label="电话"] .cell-view').nth(1).textContent()).trim(),'待补全完整号码');
+    assert.deepEqual(await emergency.locator('td[data-label="备注"] .cell-view').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['','','自定义备注']);
+
+    await page.locator('summary[aria-label="更多操作"]').click();
+    await page.getByRole('button',{name:'修改',exact:true}).click();
+    await page.waitForFunction(()=>document.body.classList.contains('editing'));
+    const phoneEditors=emergency.locator('textarea[aria-label="电话"]');
+    assert.equal(await phoneEditors.count(),3);
+    assert.equal(await phoneEditors.nth(0).inputValue(),'139 0000 0000','complete numbers must edit as the full phone, not the mask');
+    assert.equal(await phoneEditors.nth(1).inputValue(),'','masked-only numbers must not be treated as editable complete phones');
+    assert.equal(await phoneEditors.nth(1).getAttribute('placeholder'),'待补全完整号码');
+    assert.equal(await phoneEditors.nth(2).inputValue(),'137 0000 2222');
+    assert.deepEqual(await emergency.locator('textarea[aria-label="备注"]').evaluateAll(nodes=>nodes.map(n=>n.value)),['','','自定义备注']);
+
+    await phoneEditors.nth(0).fill('');
+    await phoneEditors.nth(1).fill('186 0000 5057');
+    await page.getByRole('button',{name:'保存',exact:true}).click();
+    await page.getByText('修改已保存').waitFor();
+    await page.waitForTimeout(850);
+    const saved=putBodies.at(-1).trips[0].emergency;
+    assert.deepEqual(saved[0],['家人','','',''],'clearing the editor must wipe both shown and fullPhone so the old complete number cannot revive');
+    assert.deepEqual(saved[1],['胡丽霞','186 **** 5057','','186 0000 5057'],'saving a complete number must sync the masked display field and fullPhone together');
+    assert.deepEqual(saved[2],['同事','137 **** 2222','自定义备注','137 0000 2222']);
+    assert.equal((await emergency.locator('td[data-label="电话"] .cell-view').first().textContent()).trim(),'');
+    assert.equal((await emergency.locator('td[data-label="电话"] .cell-view').nth(1).textContent()).replace('复制','').trim(),'186 0000 5057');
+    await emergency.locator('tbody tr').nth(1).locator('button[aria-label="复制电话"]').click();
+    assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'186 0000 5057');
+    assert.equal(await emergency.locator('tbody tr').first().locator('button[aria-label="复制电话"]').count(),0,'empty or masked-only phones must not be copyable as dialable numbers');
+    assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('lvce-v1')).trips[0].emergency),saved,'saved emergency rows should persist locally');
+
+    document.trips[0].emergency=structuredClone(saved);
+    await page.reload();
+    await page.waitForSelector('tr.today');
+    await page.locator('#tabs [data-tab="bookings"]').click();
+    const reloaded=page.locator('.booking-grid .table-block').last();
+    assert.equal((await reloaded.locator('td[data-label="电话"] .cell-view').first().textContent()).trim(),'','cleared phones must stay empty after refresh');
+    assert.equal((await reloaded.locator('td[data-label="电话"] .cell-view').nth(1).textContent()).replace('复制','').trim(),'186 0000 5057');
+    await page.locator('summary[aria-label="更多操作"]').click();
+    await page.getByRole('button',{name:'修改',exact:true}).click();
+    assert.equal(await reloaded.locator('textarea[aria-label="电话"]').nth(0).inputValue(),'');
+    assert.equal(await reloaded.locator('textarea[aria-label="电话"]').nth(1).inputValue(),'186 0000 5057');
+    assert.equal((await reloaded.locator('textarea[aria-label="电话"]').nth(1).inputValue()).includes('*'),false,'a mask cannot be restored into a complete phone after refresh');
+  }finally{
+    document.trips[0].emergency=oldEmergency;
+    await context.close();
+  }
 });
 
 test('tickets render, edit, persist, clone, create and keep legacy tour hidden',async()=>{
