@@ -1241,7 +1241,9 @@ test('new trip dialog cancel, escape and create flows',async()=>{
   await page.goto(base);
   await page.waitForSelector('tr.today');
   const tripCount=()=>page.locator('#tripList button').count();
+  const tripNames=()=>page.locator('#tripList button').evaluateAll(btns=>btns.map(b=>b.firstChild.textContent));
   const initialCount=await tripCount();
+  assert.deepEqual(await tripNames(),['可删除旅行','验收旅行'],'trip list should show newest stored trip first');
   const dialogOpen=()=>page.locator('#tripDialog').evaluate(el=>el.open);
 
   await page.locator('#newTrip').click();
@@ -1267,6 +1269,7 @@ test('new trip dialog cancel, escape and create flows',async()=>{
   await page.getByRole('button',{name:'创建'}).click();
   await page.waitForFunction(()=>!document.querySelector('#tripDialog')?.open);
   assert.equal(await tripCount(),initialCount+1,'successful create should add a trip');
+  assert.deepEqual(await tripNames(),['厦门秋游','可删除旅行','验收旅行'],'new trips should appear at the top of the list');
   assert.equal(await page.locator('#tripName').inputValue(),'厦门秋游');
   assert.equal(await page.locator('#tripMeta').inputValue(),'2026年10月 · 厦门');
   await page.close();
