@@ -17,6 +17,12 @@ function shanghaiDate(date=new Date()){
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 const today=shanghaiDate();
+function addCalendarDays(date,days){
+  const [year,month,day]=date.split('-').map(Number);
+  const next=new Date(Date.UTC(year,month-1,day+days));
+  return `${next.getUTCFullYear()}-${String(next.getUTCMonth()+1).padStart(2,'0')}-${String(next.getUTCDate()).padStart(2,'0')}`;
+}
+const tomorrow=addCalendarDays(today,1);
 const defaultReadingTitles=[
   '岳麓山：山水名胜、古寺宫亭与湖湘文化',
   '岳麓书院：千年学府与中国知识传统',
@@ -40,7 +46,7 @@ const newDefaultReadings=[
 ];
 const appSource=readFileSync(join(root,'app.js'),'utf8');
 const defaultReadings=Function(`return ${appSource.match(/const defaultReadings=(\[.*?\]);/s)[1]}`)();
-const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[...defaultReadings,{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注'],[tomorrow,'09:00','明日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[...defaultReadings,{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
 function pngSize(buffer){
   assert.equal(buffer.toString('ascii',1,4),'PNG','asset is not a PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20),colorType:buffer[25]};
@@ -1206,7 +1212,7 @@ test('mobile itinerary and booking cell editors keep text readable',async()=>{
   await page.getByRole('button',{name:'修改',exact:true}).click();
   await page.waitForFunction(()=>document.body.classList.contains('editing'));
 
-  assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),1,'editing should keep a date editor for each itinerary day group');
+  assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),await page.locator('.itinerary-day-group').count(),'editing should keep a date editor for each itinerary day group');
   assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing should not expose the itinerary contact field');
   const itineraryEditor=page.locator('.itinerary-block textarea[aria-label="活动"]').first();
   await assertReadableCellEditor(itineraryEditor,'mobile itinerary');
@@ -1337,7 +1343,7 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     await assertTripMenuDismissal(page,name);
     assert.equal(await page.locator('.itinerary-block .section-title h2').evaluate(el=>getComputedStyle(el).display),'none','redundant itinerary heading is visible');
     assert.equal(await page.locator('.itinerary-day-row').count(),0,'itinerary must not render synthetic day header rows');
-    assert.deepEqual(await page.locator('.itinerary-block thead th').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['时间','活动','位置','备注'],'itinerary should only show the requested four columns');
+    assert.deepEqual(await page.locator('.itinerary-current .itinerary-day-group').first().locator('thead th').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['时间','活动','位置','备注'],'itinerary should only show the requested four columns');
     assert.equal(await page.locator('.itinerary-block [data-label="联系人"]').count(),0,'itinerary contact column must not be rendered');
     assert.equal(await page.locator('.itinerary-block tbody tr').first().locator('td').count(),4,'first itinerary row should render four cells');
     assert.equal(await page.locator('.itinerary-block td[data-label="日期"],.itinerary-block th:text-is("日期")').count(),0,'data tables have no date column');
@@ -1347,7 +1353,7 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     await page.locator('summary[aria-label="更多操作"]').click();
     await page.locator('#editTrip').click();
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing itinerary must not expose contact editors');
-    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),1,'editing itinerary should keep one date editor per day group');
+    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),await page.locator('.itinerary-day-group').count(),'editing itinerary should keep one date editor per day group');
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="备注"]').first().inputValue(),'备注','itinerary notes editor must use row index 5');
     await page.locator('.itinerary-block .section-title button').evaluate(button=>button.click());
     await page.locator('#saveEdit').click();
