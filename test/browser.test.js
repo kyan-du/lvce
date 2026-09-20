@@ -232,12 +232,12 @@ test('login page reuses the main logo in a left-aligned brand group',async()=>{
 });
 
 async function assertHeaderLogo(page,name){
-  const logo=page.locator('header .brand-logo');
+  const logo=page.locator('body > header .brand-logo');
   assert.equal(await logo.count(),1,`${name} should render one header logo`);
   assert.equal(await logo.getAttribute('alt'),'LVCE logo',`${name} logo alt text is incorrect`);
   assert.equal(await logo.getAttribute('src'),'/assets/lvce-logo-4e7ee0e9.png',`${name} logo should use the cache-busted asset`);
-  assert.equal(await page.locator('header .eyebrow').count(),0,`${name} should not render the removed English eyebrow`);
-  assert.equal(await page.locator('header').textContent().then(text=>text.includes('TRAVEL PLANNER')),false,`${name} should not include the old English eyebrow copy`);
+  assert.equal(await page.locator('body > header .eyebrow').count(),0,`${name} should not render the removed English eyebrow`);
+  assert.equal(await page.locator('body > header').textContent().then(text=>text.includes('TRAVEL PLANNER')),false,`${name} should not include the old English eyebrow copy`);
   const metrics=await page.evaluate(()=>{
     const rect=selector=>{
       const r=document.querySelector(selector).getBoundingClientRect();
@@ -258,7 +258,7 @@ async function assertHeaderLogo(page,name){
       asidePaddingLeft:document.querySelector('aside')?parseFloat(getComputedStyle(document.querySelector('aside')).paddingLeft):0,
       publicView:document.body.classList.contains('public-view'),
       mobileAsideBorderRight:matchMedia('(max-width: 680px)').matches?getComputedStyle(document.querySelector('aside')).borderRightWidth:null,
-      headerBottomElement:document.elementFromPoint(innerWidth/2,document.querySelector('header').getBoundingClientRect().bottom-1)?.closest('header')?.tagName||'',
+      headerBottomElement:document.elementFromPoint(innerWidth/2,document.querySelector('body > header').getBoundingClientRect().bottom-1)?.closest('header')?.tagName||'',
       logout:document.querySelector('#logout')?.getClientRects().length?rect('#logout'):null
     };
   });
@@ -1204,7 +1204,7 @@ test('mobile itinerary and booking cell editors keep text readable',async()=>{
   await page.getByRole('button',{name:'修改',exact:true}).click();
   await page.waitForFunction(()=>document.body.classList.contains('editing'));
 
-  assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),2,'editing should keep a date editor for every itinerary row');
+  assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),1,'editing should keep a date editor for each itinerary day group');
   assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing should not expose the itinerary contact field');
   const itineraryEditor=page.locator('.itinerary-block textarea[aria-label="活动"]').first();
   await assertReadableCellEditor(itineraryEditor,'mobile itinerary');
@@ -1335,22 +1335,17 @@ test('desktop/mobile UX, delete guard, current day and copy feedback',async()=>{
     await assertTripMenuDismissal(page,name);
     assert.equal(await page.locator('.itinerary-block .section-title h2').evaluate(el=>getComputedStyle(el).display),'none','redundant itinerary heading is visible');
     assert.equal(await page.locator('.itinerary-day-row').count(),0,'itinerary must not render synthetic day header rows');
-    assert.deepEqual(await page.locator('.itinerary-block thead th').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['日期','时间','活动','位置','备注'],'itinerary should only show the requested five columns');
+    assert.deepEqual(await page.locator('.itinerary-block thead th').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['时间','活动','位置','备注'],'itinerary should only show the requested four columns');
     assert.equal(await page.locator('.itinerary-block [data-label="联系人"]').count(),0,'itinerary contact column must not be rendered');
-    assert.equal(await page.locator('.itinerary-block tbody tr').first().locator('td').count(),5,'first itinerary row should render five cells');
-    if(viewport.width>680){
-      assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td[data-label="日期"]').evaluateAll(nodes=>nodes.filter(el=>getComputedStyle(el).display!=='none').length),1,'desktop rows must repeat their date in a stable five-column structure');
-      if(name==='desktop')await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-desktop-20260804.png'),fullPage:true});
-    }else{
-      assert.equal(await page.locator('.itinerary-block tbody tr').nth(0).locator('td[data-label="日期"]').count(),1,'mobile first same-day card should show the date');
-      assert.equal(await page.locator('.itinerary-block tbody tr').nth(1).locator('td[data-label="日期"]').count(),1,'mobile repeated same-day card should repeat the full date');
-      assert.deepEqual(await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>rows.slice(0,2).map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),[today,today],'mobile same-day itinerary cards should each include the full date');
-      await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-mobile-20260804.png'),fullPage:true});
-    }
+    assert.equal(await page.locator('.itinerary-block tbody tr').first().locator('td').count(),4,'first itinerary row should render four cells');
+    assert.equal(await page.locator('.itinerary-block td[data-label="日期"],.itinerary-block th:text-is("日期")').count(),0,'data tables have no date column');
+    assert.ok(await page.locator('.itinerary-day-heading h3').count()>=1,'dates belong to day group headings');
+    if(name==='desktop')await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-desktop-20260804.png'),fullPage:true});
+    if(name==='mobile')await page.screenshot({path:join(root,'docs/evidence','local-itinerary-responsive-date-mobile-20260804.png'),fullPage:true});
     await page.locator('summary[aria-label="更多操作"]').click();
     await page.locator('#editTrip').click();
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="联系人"]').count(),0,'editing itinerary must not expose contact editors');
-    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),2,'editing itinerary should keep one clear date editor per itinerary row');
+    assert.equal(await page.locator('.itinerary-block textarea[aria-label="日期"]').count(),1,'editing itinerary should keep one date editor per day group');
     assert.equal(await page.locator('.itinerary-block textarea[aria-label="备注"]').first().inputValue(),'备注','itinerary notes editor must use row index 5');
     await page.locator('.itinerary-block .section-title button').evaluate(button=>button.click());
     await page.locator('#saveEdit').click();
@@ -1438,10 +1433,9 @@ test('itinerary next-item highlight follows Asia/Shanghai time with row-local da
     assert.equal(await page.locator('tr.next-itinerary[aria-label="下一程"]').count(),1,'next itinerary row should use the updated accessible label');
     assert.equal(await page.getByText('下一件').count(),0,'old next-itinerary label must not be exposed after leaving edit mode');
     let colors=await page.evaluate(()=>{
-      const date=document.querySelector('td.itinerary-date-cell'),time=document.querySelector('tr.next-itinerary td[data-label="时间"]');
-      return {date:getComputedStyle(date).backgroundColor,time:getComputedStyle(time).backgroundColor};
+      const time=document.querySelector('tr.next-itinerary td[data-label="时间"]');
+      return {time:getComputedStyle(time).backgroundColor};
     });
-    assert.notEqual(colors.date,'rgb(255, 247, 215)','date cell should not use the desktop yellow highlight');
     assert.equal(colors.time,'rgb(255, 247, 215)','time cell should receive the desktop yellow highlight');
     await page.close();
 
@@ -1525,7 +1519,9 @@ test('xiangxingji August 4 itinerary keeps taxi legs plus Orange Isle evening sp
     await page.close();
     page=await browser.newPage({viewport:{width:390,height:844}});
     await page.goto(base);
-    assert.deepEqual(await page.locator('.itinerary-block tbody tr:not(:has(td.empty))').evaluateAll(rows=>rows.map(row=>row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim())),['2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-04','2026-08-05'],'mobile itinerary cards should repeat same-day dates and keep the next date distinct');
+    if(await page.locator('.past-itinerary').count())await page.locator('.past-itinerary summary').click();
+    assert.deepEqual(await page.locator('.itinerary-day-group').evaluateAll(groups=>groups.map(group=>group.dataset.date)),['2026-08-04','2026-08-05'],'mobile itinerary should group same-day rows under date headings');
+    assert.equal(await page.locator('.itinerary-day-group[data-date="2026-08-04"] tbody tr').count(),6);
     await page.screenshot({path:join(root,'docs/evidence','local-xiangxingji-responsive-dates-mobile-20260804.png'),fullPage:true});
     await page.close();
   }finally{

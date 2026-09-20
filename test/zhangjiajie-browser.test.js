@@ -58,14 +58,14 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     await page.waitForSelector('.past-itinerary');
     assert.equal(await page.locator('.past-itinerary').count(),1);
     await page.locator('.past-itinerary summary').click();
-    const rows=await page.locator('.itinerary-block tbody tr').evaluateAll(rows=>{
-      let date='';
-      return rows.map(row=>{
-        const dateText=row.querySelector('td[data-label="日期"] .cell-view')?.textContent.trim();
-        if(dateText)date=dateText;
-        return {date,activity:row.querySelector('td[data-label="活动"] .cell-view')?.textContent.trim()};
+    const rows=await page.locator('.itinerary-day-group').evaluateAll(groups=>groups.flatMap(group=>{
+      const date=group.dataset.date||'';
+      return [...group.querySelectorAll('tbody tr')].map(row=>{
+        const cell=row.querySelector('td[data-label="活动"] .cell-view');
+        const activity=(cell?.childNodes[0]?.textContent||cell?.textContent||'').replace(/查看(预约|车票|门票).*/,'').trim();
+        return {date,activity};
       });
-    });
+    }));
     const aug5Rows=rows.filter(row=>row.date==='2026-08-05').map(row=>row.activity);
     assert.deepEqual(aug5Rows,[
       '湖南博物院 3 小时重点游览',
@@ -106,19 +106,24 @@ test('zhangjiajie stale browser document migrates August 7 and 8 into executable
     assert.ok(zjjRows.includes('天门山A线'));
     assert.ok(zjjRows.includes('金鞭溪'));
     assert.ok(zjjRows.includes('C7947 张家界西→长沙'));
-    assert.ok(zjjRows.includes('G206 长沙南→上海虹桥'));
+    assert.ok(zjjRows.includes('G4312 长沙南→南昌西'));
+    assert.ok(zjjRows.includes('G1384 南昌→上饶'));
+    assert.ok(zjjRows.includes('G1384 杭州东→上海南'));
+    assert.ok(zjjRows.includes('G1382 南昌→待确认'));
+    assert.equal(zjjRows.includes('G206 长沙南→上海虹桥'),false);
     assert.equal(zjjRows.some(name=>/G9679|芙蓉镇|C7769/.test(name)),false);
-    const desktopLayout=await page.locator('.itinerary-current .itinerary-table').evaluate(table=>({heads:[...table.tHead.rows[0].cells].map(cell=>cell.textContent.trim()),rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').map(row=>({cells:row.cells.length,writing:[...row.cells].map(cell=>getComputedStyle(cell).writingMode)})),tableWidth:table.getBoundingClientRect().width,viewport:innerWidth}));
-    assert.deepEqual(desktopLayout.heads,['日期','时间','活动','位置','备注']);
-    assert.ok(desktopLayout.rows.every(row=>row.cells===5&&row.writing.every(mode=>mode==='horizontal-tb')),'desktop rows must be stable five-column rows or vertical dates');
+    const desktopLayout=await page.locator('.itinerary-block .itinerary-table').first().evaluate(table=>({heads:[...table.tHead.rows[0].cells].map(cell=>cell.textContent.trim()),rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').map(row=>({cells:row.cells.length,writing:[...row.cells].map(cell=>getComputedStyle(cell).writingMode)})),tableWidth:table.getBoundingClientRect().width,viewport:innerWidth}));
+    assert.deepEqual(desktopLayout.heads,['时间','活动','位置','备注']);
+    assert.ok(desktopLayout.rows.every(row=>row.cells===4&&row.writing.every(mode=>mode==='horizontal-tb')),'desktop rows must be stable four-column rows');
     assert.ok(desktopLayout.tableWidth<=desktopLayout.viewport,'desktop table must fit a 1440px viewport');
     await page.locator('.past-itinerary summary').click();
     assert.equal(await page.locator('.past-itinerary').getAttribute('open'),null,'past itinerary should be collapsed in the acceptance screenshot');
     await page.screenshot({path:join(root,'docs/evidence/past-itinerary-section-desktop-20260807.png'),fullPage:true});
     await page.setViewportSize({width:390,height:844});
-    const mobileLayout=await page.locator('.itinerary-current .itinerary-table').evaluate(table=>({tableWidth:table.getBoundingClientRect().width,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').slice(-7).map(row=>({display:getComputedStyle(row).display,dateWriting:[...row.querySelectorAll('[data-label="日期"]')].map(cell=>getComputedStyle(cell).writingMode),labels:[...row.cells].filter(cell=>getComputedStyle(cell).display!=='none').map(cell=>cell.dataset.label)}))}));
+    await page.locator('.past-itinerary summary').click();
+    const mobileLayout=await page.locator('.itinerary-block .itinerary-table').first().evaluate(table=>({tableWidth:table.getBoundingClientRect().width,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,rows:[...table.tBodies[0].rows].filter(row=>getComputedStyle(row).display!=='none').slice(-7).map(row=>({display:getComputedStyle(row).display,labels:[...row.cells].filter(cell=>getComputedStyle(cell).display!=='none').map(cell=>cell.dataset.label)}))}));
     assert.ok(mobileLayout.tableWidth<=mobileLayout.viewport&&mobileLayout.documentWidth<=mobileLayout.viewport,'mobile itinerary must not overflow horizontally');
-    assert.ok(mobileLayout.rows.every(row=>row.display==='block'&&row.dateWriting.every(mode=>mode==='horizontal-tb')),'mobile itinerary rows must be cards with horizontal dates');
+    assert.ok(mobileLayout.rows.every(row=>row.display==='block'),'mobile itinerary rows must be cards');
     assert.ok(mobileLayout.rows.every(row=>['时间','活动','位置','备注'].every(label=>row.labels.includes(label))),'each mobile card must keep its fields grouped');
     await page.screenshot({path:join(root,'docs/evidence/past-itinerary-section-mobile-20260807.png'),fullPage:true});
     assert.equal(await page.getByText('原行程写下午天门山').count(),0);
