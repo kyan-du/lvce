@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile,mkdir} from 'node:fs/promises';
 import {join,extname} from 'node:path';
-import {existsSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 import {chromium} from 'playwright-core';
 import {PDFDocument} from 'pdf-lib';
 
@@ -38,7 +38,9 @@ const newDefaultReadings=[
   ['mengdong-river-furong-town','assets/readings/mengdong-river-furong-town.md','猛洞河与芙蓉镇','区域背景','不声称行程已经安排芙蓉镇游览'],
   ['kaifu-temple','assets/readings/kaifu-temple.md','开福寺','长沙佛教史','参观礼仪']
 ];
-const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
+const appSource=readFileSync(join(root,'app.js'),'utf8');
+const defaultReadings=Function(`return ${appSource.match(/const defaultReadings=(\[.*?\]);/s)[1]}`)();
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[...defaultReadings,{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
 function pngSize(buffer){
   assert.equal(buffer.toString('ascii',1,4),'PNG','asset is not a PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20),colorType:buffer[25]};
