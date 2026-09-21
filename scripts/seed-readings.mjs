@@ -4,7 +4,7 @@ import {basename,join} from 'node:path';
 
 const origin=process.env.LVCE_ORIGIN||'https://lvce.pages.dev';
 const password=process.env.LVCE_PASSWORD;
-const readingsDir=new URL('../assets/readings/',import.meta.url);
+const readingsDir=new URL('../test/fixtures/readings/',import.meta.url);
 if(!password){
   console.error('用法: LVCE_PASSWORD=... node scripts/seed-readings.mjs');
   process.exit(1);
@@ -37,8 +37,8 @@ if(!cookie)throw new Error('login did not return lvce_session');
 let wrote=0;
 for(const [tripId,rows] of Object.entries(catalogs)){
   for(const row of rows){
-    const file=files.get(row.id)||(row.source?basename(row.source):'');
-    if(!file)throw new Error(`${tripId}/${row.id} has no markdown file`);
+    const file=files.get(row.id);
+    if(!file)throw new Error(`${tripId}/${row.id} has no markdown fixture`);
     const markdown=await readFile(join(readingsDir.pathname,file),'utf8');
     await api(`/api/trips/${tripId}/readings/${row.id}`,{method:'PUT',headers:{cookie},body:JSON.stringify({title:row.title,venue:row.venue||'',category:row.category||'',markdown})});
     wrote++;

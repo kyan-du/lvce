@@ -9,7 +9,7 @@
 - 家庭口令仅以 PBKDF2-SHA256 派生值配置，不写入仓库
 - D1 使用单行 `trips` JSON 文档；旅读正文单独存在 `readings` 表，经登录 API 读写，不进 git、也不塞进 trips JSON。服务端验证基本结构、最多 50 个旅行、最大 256 KiB，并以版本号和 `If-Match` 防止多设备静默覆盖
 - 页面首次从云端读取。云端为空时读取 `lvce-v1` localStorage；没有本机数据时上传内置 seed。不迁移或兼容任何旧键。编辑后先存本机，再 700ms debounce 同步云端
-- 旅读正文：登录后 `GET/PUT/DELETE /api/trips/:tripId/readings/:id`；列表 `GET /api/trips/:tripId/readings`（不含正文）。分享页只读 `GET /api/public/trips/:token/readings/:id`。页面优先走 API，静态 `/assets/readings/*.md` 仅作回退，后续确认写入后再从仓库删掉
+- 旅读正文：登录后 `GET/PUT/DELETE /api/trips/:tripId/readings/:id`；列表 `GET /api/trips/:tripId/readings`（不含正文）。分享页只读 `GET /api/public/trips/:token/readings/:id`。页面走 API；仓库只保留 `test/fixtures/readings/*.md` 作为测试/再灌种夹具，不作为站点静态资源。需要补种时用 `LVCE_PASSWORD=... node scripts/seed-readings.mjs`，口令只走环境变量。
 
 ## 本地开发
 
