@@ -939,7 +939,14 @@ test('tickets render, edit, persist, clone, create and keep legacy tour hidden',
   assert.deepEqual(await page.locator('.transport-block tbody tr').first().locator('td').evaluateAll(nodes=>nodes.map((n,index)=>[index,n.dataset.label,n.querySelector('.cell-view')?.textContent])),[[0,'客运公司','铁路（3张）'],[1,'航班/车次','G123 复制'],[2,'座位号','待填写'],[3,'日期','2026-08-03'],[4,'出发地','甲地'],[5,'出发时间','09:00'],[6,'目的地','乙地'],[7,'抵达时间','10:00'],[8,'预订号','BOOKING-20260803-ABC123']]);
   assert.equal(await page.locator('.transport-block tbody tr').count(),2,'transport rows must not be split by passenger seats');
   assert.equal(await page.locator('.transport-block tbody tr').nth(1).locator('td').count(),9,'each transport trip should keep exactly nine cells');
-  assert.equal(await page.locator('.transport-block td[data-label="座位号"] .cell-view').nth(1).textContent(),'张三 二等座 01车01A号\n李四 二等座 01车01B号\n王五 二等座 01车01C号','multi-passenger seats should render as three lines inside one cell');
+  const seatButtons=page.locator('.transport-block tbody tr').nth(1).locator('td[data-label="座位号"] .inline-note');
+  assert.equal(await seatButtons.count(),3,'multi-passenger seats should stay on one trip as three underlined summaries');
+  assert.deepEqual(await seatButtons.evaluateAll(nodes=>nodes.map(n=>n.textContent)),['张三 01车01A','李四 01车01B','王五 01车01C']);
+  await seatButtons.nth(1).hover();
+  await page.waitForSelector('.inline-note-tip:not([hidden])');
+  assert.equal(await page.locator('.inline-note-tip span').textContent(),'李四 二等座 01车01B号','seat tip should show the original 12306 line');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>document.querySelector('.inline-note-tip')?.hidden);
   assert.equal(await page.locator('.transport-block td[data-label="预订号"] .cell-view').nth(1).textContent(),'BOOKING-20260804-XYZ789','multi-passenger row should keep its full booking number');
   assert.equal(await page.locator('.transport-block td[data-label="客运公司"] .cell-view').first().textContent(),'铁路（3张）','paid copy should be stripped from carrier values');
   assert.equal(await page.locator('.transport-block td[data-label="座位号"] .cell-view').first().textContent(),'待填写','legacy transport rows should get a seat placeholder');
