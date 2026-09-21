@@ -123,7 +123,7 @@ test('login page treats 204 session response as success and enters the main page
   const context=await browser.newContext();
   const page=await context.newPage();
   await submitLogin(page);
-  await page.waitForURL(base+'/');
+  await page.waitForURL(url=>new URL(url).pathname==='/');
   await page.waitForSelector('tr.today');
   const cookies=await context.cookies(base);
   const session=cookies.find(cookie=>cookie.name==='lvce_session');
@@ -1024,7 +1024,7 @@ test('share menu creates copied public URL and revoke requires confirmation',asy
   await page.locator('#shareTrip').click();
   await page.getByText('分享链接已复制').waitFor();
   const copied=await page.evaluate(()=>navigator.clipboard.readText());
-  assert.match(copied,new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}/share/[A-Za-z0-9_-]{43}$`),'share should copy a public URL');
+  assert.match(copied,new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}/share/[A-Za-z0-9_-]{43}#/itinerary$`),'share should copy a public URL with the current tab');
   assert.equal(sharedTrips.has('one'),true,'mock share state should be created');
   assert.equal(putBodies.length,0,'share metadata changes must not write the trip document when it is not dirty');
   assert.deepEqual(dialogs,[],'share metadata changes must not show trip version conflict dialogs');
