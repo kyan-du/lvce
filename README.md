@@ -7,8 +7,9 @@
 - 全站（除登录页/登录接口）要求登录；API 未登录返回 `401`
 - 会话为 HMAC 签名、30 天有效的 `HttpOnly; Secure; SameSite=Strict` Cookie；会话 ID 同时存入 D1，退出时删除，因此旧 Cookie 重放会立即失效
 - 家庭口令仅以 PBKDF2-SHA256 派生值配置，不写入仓库
-- D1 使用单行 `trips` JSON 文档；服务端验证基本结构、最多 50 个旅行、最大 256 KiB，并以版本号和 `If-Match` 防止多设备静默覆盖
+- D1 使用单行 `trips` JSON 文档；旅读正文单独存在 `readings` 表，经登录 API 读写，不进 git、也不塞进 trips JSON。服务端验证基本结构、最多 50 个旅行、最大 256 KiB，并以版本号和 `If-Match` 防止多设备静默覆盖
 - 页面首次从云端读取。云端为空时读取 `lvce-v1` localStorage；没有本机数据时上传内置 seed。不迁移或兼容任何旧键。编辑后先存本机，再 700ms debounce 同步云端
+- 旅读正文：登录后 `GET/PUT/DELETE /api/trips/:tripId/readings/:id`；列表 `GET /api/trips/:tripId/readings`（不含正文）。分享页只读 `GET /api/public/trips/:token/readings/:id`。页面优先走 API，静态 `/assets/readings/*.md` 仅作回退，后续确认写入后再从仓库删掉
 
 ## 本地开发
 
@@ -46,7 +47,7 @@ cloudflared tunnel run kyan
 
 1. 创建 Pages 项目 `lvce` 和 D1 数据库 `lvce`。
 2. 把 `wrangler.toml` 的 `LVCE_DB_ID` 替换成真实 D1 database ID。
-3. 执行远程迁移：`npx wrangler d1 execute lvce --remote --file schema.sql`。
+3. 执行远程迁移：`npx wrangler d1 execute lvce --remote --file schema.sql`。`CREATE TABLE IF NOT EXISTS` 对已有库是安全的，会补上 `readings` 表。
 4. 生成口令派生值：`npm run hash-password -- "家庭口令"`。
 5. 在 Pages 项目 **Settings → Variables and Secrets** 配置加密变量：
    - `FAMILY_PASSWORD_HASH`：上一步输出
