@@ -23,3 +23,8 @@ test('unknown tabs and leftover reading ids fall back cleanly',()=>{
   assert.equal(formatViewHash({tripId:'qiantang',tab:'notes',reading:'x'}),'#/qiantang/itinerary');
   assert.equal(formatViewHash({tripId:'qiantang',tab:'packing',reading:'leftover'}),'#/qiantang/packing');
 });
+
+test('invalid percent-encoding is treated as an empty hash',()=>{
+  assert.deepEqual(parseViewHash('#/%E0%A4%A'),{tripId:'',tab:'itinerary',reading:''});
+  assert.deepEqual(parseViewHash('#/%E0%A4%A',{publicView:true}),{tripId:'',tab:'itinerary',reading:''});
+});

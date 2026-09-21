@@ -134,6 +134,22 @@ test('login page treats 204 session response as success and enters the main page
   await context.close();
 });
 
+test('hash URL follows tab clicks and restores a reading view',async()=>{
+  const page=await browser.newPage();
+  await page.goto(base);
+  await page.waitForSelector('#tabs [data-tab="itinerary"].active');
+  await page.waitForFunction(()=>location.hash==='#/one/itinerary');
+  await page.locator('#tabs [data-tab="packing"]').click();
+  await page.waitForFunction(()=>location.hash==='#/one/packing');
+  assert.equal(await page.locator('#tabs [data-tab="packing"]').evaluate(el=>el.classList.contains('active')),true);
+  await page.goto(base+'/#/one/reading/test-reading');
+  await page.waitForSelector('.reading-view');
+  assert.equal(await page.locator('#tabs [data-tab="reading"]').evaluate(el=>el.classList.contains('active')),true);
+  assert.equal(await page.locator('.reading-head h2').textContent(),'测试旅读');
+  assert.equal(await page.evaluate(()=>location.hash),'#/one/reading/test-reading');
+  await page.close();
+});
+
 test('brand logo and favicon assets exist with expected transparent-friendly sizes',async()=>{
   const pngAssets=[
     ['assets/lvce-logo-4e7ee0e9.png',512,512],
@@ -896,7 +912,7 @@ test('emergency phone editors bind the full number, persist both fields, and can
 
     document.trips[0].emergency=structuredClone(saved);
     await page.reload();
-    await page.waitForSelector('tr.today');
+    await page.waitForSelector('#tabs [data-tab="bookings"].active');
     await page.locator('#tabs [data-tab="bookings"]').click();
     const reloaded=page.locator('.booking-grid .table-block').last();
     assert.equal((await reloaded.locator('td[data-label="电话"] .cell-view').first().textContent()).trim(),'','cleared phones must stay empty after refresh');
