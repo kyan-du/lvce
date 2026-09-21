@@ -1339,6 +1339,48 @@ test('narrow booking cards stack labels above values without clipping long field
   await page.close();
 });
 
+test('narrow itinerary cards stack labels above values without squeezing notes',async()=>{
+  const page=await browser.newPage({viewport:{width:390,height:844}});
+  await page.goto(base);
+  await page.waitForSelector('#tabs [data-tab="itinerary"].active');
+  await page.waitForSelector('.itinerary-table td[data-label="备注"] .cell-view');
+
+  const metrics=await page.evaluate(()=>{
+    const noteTd=document.querySelector('.itinerary-table td[data-label="备注"]');
+    const activityTd=document.querySelector('.itinerary-table td[data-label="活动"]');
+    const timeTd=document.querySelector('.itinerary-table td[data-label="时间"]');
+    const noteView=noteTd.querySelector('.cell-view');
+    const activityView=activityTd.querySelector('.cell-view');
+    const before=getComputedStyle(noteTd,'::before');
+    const tdStyle=getComputedStyle(noteTd);
+    const noteRect=noteView.getBoundingClientRect();
+    const card=noteTd.closest('tr').getBoundingClientRect();
+    return {
+      paddingLeft:parseFloat(tdStyle.paddingLeft),
+      labelIsAbsolute:before.position==='absolute',
+      gridTemplateColumns:tdStyle.gridTemplateColumns,
+      noteWidth:noteRect.width,
+      cardInnerWidth:card.width-28,
+      noteOverflow:noteView.scrollWidth>noteView.clientWidth+1,
+      activityText:activityView.innerText.replace(/\s+/g,' ').trim(),
+      noteText:noteView.innerText.replace(/\s+/g,' ').trim(),
+      timeText:timeTd.querySelector('.cell-view').innerText.replace(/\s+/g,' ').trim(),
+      writingMode:getComputedStyle(noteView).writingMode
+    };
+  });
+
+  assert.equal(metrics.labelIsAbsolute,false,'narrow itinerary labels should not sit in a fixed left column');
+  assert.ok(metrics.paddingLeft<=24,'narrow itinerary values should not be indented past a squeezed label gutter');
+  assert.equal(metrics.writingMode,'horizontal-tb','itinerary notes should stay horizontal');
+  assert.ok(!/^64px /.test(metrics.gridTemplateColumns),'itinerary cells should not reserve a 64px label column that swallows the value');
+  assert.ok(metrics.noteWidth+8>=metrics.cardInnerWidth,'itinerary notes should use the full card width under the label');
+  assert.equal(metrics.noteOverflow,false,'itinerary notes should wrap in the card instead of clipping');
+  assert.match(metrics.activityText,/今日活动|同日活动|明日活动/,'itinerary activity should remain fully visible');
+  assert.match(metrics.noteText,/备注/,'itinerary notes should remain fully visible');
+  assert.match(metrics.timeText,/\d{1,2}:\d{2}/,'itinerary time should remain fully visible');
+  await page.close();
+});
+
 test('booking textarea editors expand rows and cards without internal vertical scrolling',async()=>{
   putBodies=[];
   for(const [name,viewport] of [['desktop',{width:1024,height:800}],['mobile',{width:390,height:844}]]){
