@@ -1,5 +1,5 @@
 import {cookie,readSession} from '../lib/auth.js';
-const PUBLIC=new Set(['/login','/login.html','/style.css','/app.js','/lib/view-url.js','/lib/transport-seats.js','/favicon.ico','/site.webmanifest','/api/login','/api/auth/login']);
+const PUBLIC=new Set(['/login','/login.html','/style.css','/app.js','/lib/view-url.js','/lib/transport-seats.js','/lib/hotel-fields.js','/favicon.ico','/site.webmanifest','/api/login','/api/auth/login']);
 const NO_STORE='no-store, no-cache, must-revalidate, max-age=0';
 function shouldDisableCache(url,response){
  const type=(response.headers.get('content-type')||'').toLowerCase();
