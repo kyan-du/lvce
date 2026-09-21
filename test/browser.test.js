@@ -36,17 +36,22 @@ const defaultReadingTitles=[
   '开福寺：长沙佛教史、建筑与参观礼仪'
 ];
 const newDefaultReadings=[
-  ['yuelu-mountain','assets/readings/yuelu-mountain.md','岳麓山','麓山寺','爱晚亭'],
-  ['zhangjiajie-forest-overview','assets/readings/zhangjiajie-forest-overview.md','张家界国家森林公园','石英砂岩峰林','世界自然遗产'],
-  ['yuanjiajie-bailong-tianzishan','assets/readings/yuanjiajie-bailong-tianzishan.md','袁家界、百龙天梯与天子山','峰林地貌','百龙天梯'],
-  ['jinbianxi','assets/readings/jinbianxi.md','金鞭溪','峡谷溪流生态','金鞭岩'],
-  ['tianmen-mountain','assets/readings/tianmen-mountain.md','天门山','天门洞','索道'],
-  ['mengdong-river-furong-town','assets/readings/mengdong-river-furong-town.md','猛洞河与芙蓉镇','区域背景','不声称行程已经安排芙蓉镇游览'],
-  ['kaifu-temple','assets/readings/kaifu-temple.md','开福寺','长沙佛教史','参观礼仪']
+  ['yuelu-mountain','岳麓山','麓山寺','爱晚亭'],
+  ['zhangjiajie-forest-overview','张家界国家森林公园','石英砂岩峰林','世界自然遗产'],
+  ['yuanjiajie-bailong-tianzishan','袁家界、百龙天梯与天子山','峰林地貌','百龙天梯'],
+  ['jinbianxi','金鞭溪','峡谷溪流生态','金鞭岩'],
+  ['tianmen-mountain','天门山','天门洞','索道'],
+  ['mengdong-river-furong-town','猛洞河与芙蓉镇','区域背景','不声称行程已经安排芙蓉镇游览'],
+  ['kaifu-temple','开福寺','长沙佛教史','参观礼仪']
 ];
 const appSource=readFileSync(join(root,'app.js'),'utf8');
 const defaultReadings=Function(`return ${appSource.match(/const defaultReadings=(\[.*?\]);/s)[1]}`)();
-const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注'],[tomorrow,'09:00','明日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人'],['同事','137 **** 2222','自定义备注','137 0000 2222']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[...defaultReadings,{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
+const fixtureReadings=join(root,'test/fixtures/readings');
+function fixtureMarkdown(id){
+  const file=join(fixtureReadings,`${id}.md`);
+  return existsSync(file)?readFileSync(file,'utf8'):'';
+}
+const document={active:'one',tab:'itinerary',trips:[{id:'one',name:'验收旅行',meta:'自动化测试',categories:[{id:'c',name:'清单',items:[{id:'i',name:'雨衣',qty:1,packed:false}]}],itinerary:[[today,'23:00','今日活动','地点','联系人','备注'],[today,'23:30','同日活动','地点','联系人','备注'],[tomorrow,'09:00','明日活动','地点','联系人','备注']],transport:[['铁路·已支付（3张）','G123','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],['铁路（3张）','G456','张三 二等座 01车01A号；李四 二等座 01车01B号；王五 二等座 01车01C号','2026-08-04','丙地','11:00','丁地','12:00','BOOKING-20260804-XYZ789']],hotels:[['酒店','2026-08-03','前台','138 0000 0000','测试地址 1 号','房型：标准双床房','1','¥1'],{name:'对象酒店',checkin:'2026-08-04',checkout:'2026-08-06',concierge:'对象礼宾',contact:'139 0000 0001',address:'对象地址 2 号',roomType:'对象房型',nights:'99',totalCost:'¥2'}],tickets:[['超长中文门票名称用于验证移动端可以自然换行且不会撑破布局的张家界国家森林公园联票','2026-08-04','成人票 08:00-10:00','2','张三 / QR123','¥288','凭身份证或二维码入园，提前 30 分钟到达']],emergency:[['家人','139 **** 0000','', '139 0000 0000'],['胡丽霞','186 **** 5057','紧急联系人'],['同事','137 **** 2222','自定义备注','137 0000 2222']],tour:[['旧旅行团联系人','旧旅行团电话','旧旅行团备注保留但不展示']],readings:[...defaultReadings.map(row=>({...row,markdown:fixtureMarkdown(row.id)})),{id:'test-reading',title:'测试旅读',venue:'测试场馆',category:'测试分类',markdown:'# 测试旅读\n\n## 标题\n\n- 列表项\n\n> 引用内容\n\n```js\nconst a=1;\n```\n\n---\n\n| 列 A | 列 B |\n|---|---|\n| 甲 | 乙 |'}]},{id:'two',name:'可删除旅行',meta:'',categories:[],itinerary:[],transport:[],hotels:[],emergency:[],tour:[],readings:[]}]};
 function pngSize(buffer){
   assert.equal(buffer.toString('ascii',1,4),'PNG','asset is not a PNG');
   return {width:buffer.readUInt32BE(16),height:buffer.readUInt32BE(20),colorType:buffer[25]};
@@ -61,7 +66,21 @@ function icoSizes(buffer){
   }
   return sizes.sort();
 }
-test.before(async()=>{await mkdir(join(root,'docs/evidence'),{recursive:true});sharedTrips=new Set();publicTokens=new Map();shareCounter=0;server=createServer(async(req,res)=>{let url=new URL(req.url,'http://127.0.0.1');if(url.pathname==='/api/auth/login'||url.pathname==='/api/login'){for await(const _ of req);if(loginMode==='html'){res.statusCode=502;res.setHeader('content-type','text/html');res.end('<!doctype html><main>fallback</main>');return}if(loginMode==='unauthorized'){res.statusCode=401;res.setHeader('content-type','application/json');res.end(JSON.stringify({error:'口令错误'}));return}res.statusCode=204;res.setHeader('set-cookie','lvce_session=test-session; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000');res.end();return}if(url.pathname==='/api/trips'){res.setHeader('content-type','application/json');if(req.method==='GET')res.end(JSON.stringify({version:1,data:document,shares:Object.fromEntries([...sharedTrips].map(id=>[id,true]))}));else{let body='';for await(const chunk of req)body+=chunk;putBodies.push(JSON.parse(body));if(syncConflictNext){syncConflictNext=false;res.statusCode=409;res.end(JSON.stringify({error:'数据已在其他设备更新，请刷新后重试',version:9}));return}res.end(JSON.stringify({version:2}))}return}if(url.pathname==='/api/trips/share'){let body='';for await(const chunk of req)body+=chunk;let payload=JSON.parse(body||'{}');shareRequests.push({method:req.method,payload});if(shareHtmlFallback){res.statusCode=404;res.setHeader('content-type','text/html');res.end('<!DOCTYPE html><main>SPA fallback</main>');return}res.setHeader('content-type','application/json');if(req.method==='POST'){if(sharedTrips.has(payload.tripId)){res.statusCode=409;res.end(JSON.stringify({error:'旅行计划已分享'}));return}let token=String.fromCharCode(97+shareCounter++).repeat(43);sharedTrips.add(payload.tripId);publicTokens.set(token,payload.tripId);res.end(JSON.stringify({token}));return}if(req.method==='DELETE'){sharedTrips.delete(payload.tripId);for(const [token,tripId] of publicTokens)if(tripId===payload.tripId)publicTokens.delete(token);res.end(JSON.stringify({ok:true}));return}}if(url.pathname.startsWith('/api/public/trips/')){res.setHeader('content-type','application/json');let token=decodeURIComponent(url.pathname.split('/').pop()),tripId=publicTokens.get(token),trip=document.trips.find(t=>t.id===tripId);if(!trip){res.statusCode=404;res.end(JSON.stringify({error:'分享不存在'}));return}res.end(JSON.stringify({version:1,data:{active:trip.id,tab:document.tab,trips:[trip]}}));return}let p=url.pathname==='/'||url.pathname.startsWith('/share/')?'index.html':url.pathname.slice(1);try{let data=await readFile(join(root,p));res.setHeader('content-type',mime[extname(p)]||'application/octet-stream');res.end(data)}catch{res.statusCode=404;res.end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${server.address().port}`;browser=await chromium.launch({executablePath:browserPath,headless:true})});
+test.before(async()=>{await mkdir(join(root,'docs/evidence'),{recursive:true});sharedTrips=new Set();publicTokens=new Map();shareCounter=0;server=createServer(async(req,res)=>{let url=new URL(req.url,'http://127.0.0.1');if(url.pathname==='/api/auth/login'||url.pathname==='/api/login'){for await(const _ of req);if(loginMode==='html'){res.statusCode=502;res.setHeader('content-type','text/html');res.end('<!doctype html><main>fallback</main>');return}if(loginMode==='unauthorized'){res.statusCode=401;res.setHeader('content-type','application/json');res.end(JSON.stringify({error:'口令错误'}));return}res.statusCode=204;res.setHeader('set-cookie','lvce_session=test-session; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000');res.end();return}if(url.pathname==='/api/trips'){res.setHeader('content-type','application/json');if(req.method==='GET')res.end(JSON.stringify({version:1,data:document,shares:Object.fromEntries([...sharedTrips].map(id=>[id,true]))}));else{let body='';for await(const chunk of req)body+=chunk;putBodies.push(JSON.parse(body));if(syncConflictNext){syncConflictNext=false;res.statusCode=409;res.end(JSON.stringify({error:'数据已在其他设备更新，请刷新后重试',version:9}));return}res.end(JSON.stringify({version:2}))}return}if(url.pathname==='/api/trips/share'){let body='';for await(const chunk of req)body+=chunk;let payload=JSON.parse(body||'{}');shareRequests.push({method:req.method,payload});if(shareHtmlFallback){res.statusCode=404;res.setHeader('content-type','text/html');res.end('<!DOCTYPE html><main>SPA fallback</main>');return}res.setHeader('content-type','application/json');if(req.method==='POST'){if(sharedTrips.has(payload.tripId)){res.statusCode=409;res.end(JSON.stringify({error:'旅行计划已分享'}));return}let token=String.fromCharCode(97+shareCounter++).repeat(43);sharedTrips.add(payload.tripId);publicTokens.set(token,payload.tripId);res.end(JSON.stringify({token}));return}if(req.method==='DELETE'){sharedTrips.delete(payload.tripId);for(const [token,tripId] of publicTokens)if(tripId===payload.tripId)publicTokens.delete(token);res.end(JSON.stringify({ok:true}));return}}const readingMatch=url.pathname.match(/^\/api\/(?:trips\/([^/]+)|public\/trips\/([^/]+))\/readings(?:\/([^/]+))?$/);
+if(readingMatch){
+  res.setHeader('content-type','application/json');
+  const tripId=readingMatch[1]||publicTokens.get(decodeURIComponent(readingMatch[2]||''));
+  const readingId=readingMatch[3];
+  const trip=document.trips.find(t=>t.id===tripId);
+  if(!trip){res.statusCode=404;res.end(JSON.stringify({error:'分享不存在'}));return}
+  const rows=Array.isArray(trip.readings)?trip.readings:[];
+  if(!readingId){res.end(JSON.stringify(rows.map(({id,title,venue,category})=>({id,title,venue,category}))));return}
+  const row=rows.find(r=>r.id===readingId);
+  if(!row||typeof row.markdown!=='string'){res.statusCode=404;res.end(JSON.stringify({error:'旅读不存在'}));return}
+  res.end(JSON.stringify({id:row.id,title:row.title,venue:row.venue,category:row.category,markdown:row.markdown}));
+  return;
+}
+if(url.pathname.startsWith('/api/public/trips/')){res.setHeader('content-type','application/json');let token=decodeURIComponent(url.pathname.split('/').pop()),tripId=publicTokens.get(token),trip=document.trips.find(t=>t.id===tripId);if(!trip){res.statusCode=404;res.end(JSON.stringify({error:'分享不存在'}));return}res.end(JSON.stringify({version:1,data:{active:trip.id,tab:document.tab,trips:[trip]}}));return}let p=url.pathname==='/'||url.pathname.startsWith('/share/')?'index.html':url.pathname.slice(1);try{let data=await readFile(join(root,p));res.setHeader('content-type',mime[extname(p)]||'application/octet-stream');res.end(data)}catch{res.statusCode=404;res.end()}});await new Promise(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${server.address().port}`;browser=await chromium.launch({executablePath:browserPath,headless:true})});
 test.after(async()=>{await browser?.close();await new Promise(r=>server.close(r))});
 
 async function submitLogin(page,value='test-password'){
@@ -135,47 +154,6 @@ test('brand logo and favicon assets exist with expected transparent-friendly siz
     ['/assets/icon-192-4e7ee0e9.png','192x192','image/png'],
     ['/assets/icon-512-4e7ee0e9.png','512x512','image/png']
   ]);
-});
-
-test('Orange Isle reading contains checked full Qinyuanchun text and annotation data',async()=>{
-  const markdown=await readFile(join(root,'assets/readings/orange-isle.md'),'utf8');
-  assert.match(markdown,/## 三、《沁园春·长沙》完整词文与联机注释/,'橘子洲正式文章应包含完整词文与联机注释章节');
-  assert.doesNotMatch(markdown,/contentReference/,'橘子洲正式文章不应包含 contentReference 残留');
-  assert.match(markdown,/百度百科（访问日期 2026-08-04）/,'橘子洲文章应注明指定底本和访问日期');
-  assert.match(markdown,/作者为“毛泽东”/,'橘子洲文章应记录作者核对结果');
-  assert.match(markdown,/独立寒秋.*谁\[\[主沉浮\|n13\]\]？/s,'上阕关键首尾和标点应存在');
-  assert.match(markdown,/携来百侣曾游.*\[\[浪遏飞舟\|n23\]\]。/s,'下阕关键首尾和句号应存在');
-  assert.equal([...markdown.matchAll(/^\[\^n\d{2}\]:/gm)].length,23,'应录入 23 条百度百科词句注释');
-  for(const phrase of ['湘江：一名湘水','层林尽染：山上一层层的树林经霜打变红','挥斥方遒（qiú）','遏（e）：阻止'])assert.ok(markdown.includes(phrase),`注释应包含 ${phrase}`);
-  assert.match(markdown,/解析部分为家庭内部阅读场景下的原创解析/,'应说明赏析为原创解析');
-});
-
-test('default reading registry follows itinerary order and source markdown is clean',async()=>{
-  const app=await readFile(join(root,'app.js'),'utf8');
-  const registry=Function(`return ${app.match(/const defaultReadings=(\[.*?\]);/s)[1]}`)();
-  assert.equal(registry.length,10,'湘行记 should expose ten default readings after adding the remaining real sights');
-  assert.deepEqual(registry.map(reading=>reading.title),defaultReadingTitles,'default readings should follow the trip order');
-  assert.deepEqual(registry.map(reading=>reading.source),[
-    '/assets/readings/yuelu-mountain.md',
-    '/assets/readings/yuelu-academy.md',
-    '/assets/readings/orange-isle.md',
-    '/assets/readings/zhangjiajie-forest-overview.md',
-    '/assets/readings/yuanjiajie-bailong-tianzishan.md',
-    '/assets/readings/jinbianxi.md',
-    '/assets/readings/tianmen-mountain.md',
-    '/assets/readings/mengdong-river-furong-town.md',
-    '/assets/readings/mawangdui-laozi.md',
-    '/assets/readings/kaifu-temple.md'
-  ]);
-  for(const [id,file,h1,...phrases] of newDefaultReadings){
-    const reading=registry.find(item=>item.id===id);
-    assert.ok(reading,`${id} should be registered`);
-    const md=await readFile(join(root,file),'utf8');
-    assert.match(md,new RegExp(`^# ${h1.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}`),`${file} should start with its key title`);
-    assert.match(md,/## 资料来源/,`${file} should include a source section`);
-    assert.doesNotMatch(md,/contentReference/,`${file} should not contain contentReference residue`);
-    for(const phrase of phrases)assert.ok(md.includes(phrase),`${file} should mention ${phrase}`);
-  }
 });
 
 async function assertLoginLogo(page,name,{desktop=false}={}){
@@ -770,15 +748,15 @@ test('reading tab renders safe markdown and emergency phones follow auth visibil
   assert.notEqual(await page.evaluate(()=>getComputedStyle(document.querySelector('.inline-note-print')).display),'none','annotation notes should remain available as a print fallback');
   assert.equal(await page.getByText('contentReference').count(),0,'橘子洲 article should not contain contentReference residue');
   await page.locator('.reading-back').click();
-  for(const [,file,title,...phrases] of newDefaultReadings){
+  for(const [id,title,...phrases] of newDefaultReadings){
     const card=page.locator('.reading-card').filter({hasText:title});
     await card.click();
     await page.waitForSelector('.markdown-body h2');
-    assert.equal(await page.locator('.reading-head h2').textContent(),defaultReadingTitles.find(x=>x.startsWith(title))||title,`${file} should load through the reading UI`);
-    assert.ok(await page.locator('.markdown-body').getByText('资料来源').count()>0,`${file} should render its source section`);
-    assert.equal(await page.getByText('contentReference').count(),0,`${file} should not render contentReference residue`);
+    assert.equal(await page.locator('.reading-head h2').textContent(),defaultReadingTitles.find(x=>x.startsWith(title))||title,`${id} should load through the reading UI`);
+    assert.ok(await page.locator('.markdown-body').getByText('资料来源').count()>0,`${id} should render its source section`);
+    assert.equal(await page.getByText('contentReference').count(),0,`${id} should not render contentReference residue`);
     const bodyText=await page.locator('.markdown-body').textContent();
-    for(const phrase of phrases)assert.ok(bodyText.includes(phrase),`${file} should render ${phrase}`);
+    for(const phrase of phrases)assert.ok(bodyText.includes(phrase),`${id} should render ${phrase}`);
     await page.locator('.reading-back').click();
   }
   await page.close();

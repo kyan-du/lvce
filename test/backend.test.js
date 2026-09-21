@@ -269,6 +269,7 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.deepEqual(trip.emergency,QIANTANG_EMERGENCY);
   assert.equal(QIANTANG_EMERGENCY.every(row=>row[2]===''),true,'qiantang seed must not repeat the section title as a note');
   assert.deepEqual(trip.readings.map(row=>row.id),QIANTANG_READINGS.map(row=>row.id));
+  assert.equal(trip.readings.every(row=>!row.source),true,'qiantang catalog cards must not keep static markdown paths');
   assert.equal(trip.transport.find(row=>row[1]==='G7305')[2].includes('杜明远'),false);
   assert.ok(JSON.stringify(trip.itinerary).includes('杜明远免票随行'));
   assert.equal(/¥\d/.test(trip.transport.find(row=>row[1]==='G1347')[2].split('\n').find(line=>line.includes('胡丽霞'))||''),false);
@@ -321,6 +322,7 @@ test('v1 qiantang itinerary is refreshed, sorted and keeps genuine hand edits',(
   assert.match(trip.itinerary.find(row=>row[2]==='入住汉庭海宁盐仓酒店')[3],/老盐仓/);
   assert.equal(trip.itinerary.some(row=>row[2]==='入住嘉兴'),false);
   assert.deepEqual(trip.readings.map(row=>row.id),['keep-custom',...QIANTANG_READINGS.map(row=>row.id)]);
+  assert.equal(trip.readings.every(row=>!row.source),true,'GET migration must drop leftover static source paths');
   const edited={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_V1_ITINERARY_ROWS.map(row=>row[2]==='G7305 嘉兴南→海宁西'?['2026-09-25','手改发车','G7305 嘉兴南→海宁西','嘉兴南／海宁西','胡丽霞','手改备注']:row.slice()),transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
   const kept=migrateTripDocument(edited).data.trips[0].itinerary.find(row=>row[2]==='G7305 嘉兴南→海宁西');
   assert.equal(kept[1],'手改发车');
