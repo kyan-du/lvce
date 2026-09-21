@@ -123,7 +123,7 @@ test('login page treats 204 session response as success and enters the main page
   const context=await browser.newContext();
   const page=await context.newPage();
   await submitLogin(page);
-  await page.waitForURL(base+'/');
+  await page.waitForURL(url=>new URL(url).pathname==='/');
   await page.waitForSelector('tr.today');
   const cookies=await context.cookies(base);
   const session=cookies.find(cookie=>cookie.name==='lvce_session');
@@ -132,6 +132,22 @@ test('login page treats 204 session response as success and enters the main page
   assert.equal(session.sameSite,'Strict');
   assert.ok(session.expires>Date.now()/1000,'session cookie should have an expiry');
   await context.close();
+});
+
+test('hash URL follows tab clicks and restores a reading view',async()=>{
+  const page=await browser.newPage();
+  await page.goto(base);
+  await page.waitForSelector('#tabs [data-tab="itinerary"].active');
+  await page.waitForFunction(()=>location.hash==='#/one/itinerary');
+  await page.locator('#tabs [data-tab="packing"]').click();
+  await page.waitForFunction(()=>location.hash==='#/one/packing');
+  assert.equal(await page.locator('#tabs [data-tab="packing"]').evaluate(el=>el.classList.contains('active')),true);
+  await page.goto(base+'/#/one/reading/test-reading');
+  await page.waitForSelector('.reading-view');
+  assert.equal(await page.locator('#tabs [data-tab="reading"]').evaluate(el=>el.classList.contains('active')),true);
+  assert.equal(await page.locator('.reading-head h2').textContent(),'测试旅读');
+  assert.equal(await page.evaluate(()=>location.hash),'#/one/reading/test-reading');
+  await page.close();
 });
 
 test('brand logo and favicon assets exist with expected transparent-friendly sizes',async()=>{
@@ -896,7 +912,7 @@ test('emergency phone editors bind the full number, persist both fields, and can
 
     document.trips[0].emergency=structuredClone(saved);
     await page.reload();
-    await page.waitForSelector('tr.today');
+    await page.waitForSelector('#tabs [data-tab="bookings"].active');
     await page.locator('#tabs [data-tab="bookings"]').click();
     const reloaded=page.locator('.booking-grid .table-block').last();
     assert.equal((await reloaded.locator('td[data-label="电话"] .cell-view').first().textContent()).trim(),'','cleared phones must stay empty after refresh');
@@ -1024,7 +1040,7 @@ test('share menu creates copied public URL and revoke requires confirmation',asy
   await page.locator('#shareTrip').click();
   await page.getByText('分享链接已复制').waitFor();
   const copied=await page.evaluate(()=>navigator.clipboard.readText());
-  assert.match(copied,new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}/share/[A-Za-z0-9_-]{43}$`),'share should copy a public URL');
+  assert.match(copied,new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}/share/[A-Za-z0-9_-]{43}#/itinerary$`),'share should copy a public URL with the current tab');
   assert.equal(sharedTrips.has('one'),true,'mock share state should be created');
   assert.equal(putBodies.length,0,'share metadata changes must not write the trip document when it is not dirty');
   assert.deepEqual(dialogs,[],'share metadata changes must not show trip version conflict dialogs');

@@ -104,7 +104,7 @@ test('middleware keeps login and public share routes open without opening authen
     const response=await middleware({request:new Request('https://example.test'+path),env,next:async()=>{nextCalled=true;return new Response('next')}});
     return {nextCalled,response};
   }
-  for(const path of ['/login','/login.html','/api/login','/api/auth/login','/share/abc','/api/public/trips/'+('a'.repeat(43))]){
+  for(const path of ['/login','/login.html','/api/login','/api/auth/login','/app.js','/lib/view-url.js','/share/abc','/api/public/trips/'+('a'.repeat(43))]){
     const result=await hit(path);
     assert.equal(result.nextCalled,true,`${path} should pass through middleware`);
     assert.equal(result.response.status,200);
