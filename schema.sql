@@ -17,3 +17,14 @@ CREATE TABLE IF NOT EXISTS public_trip_shares (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS public_trip_shares_trip_id ON public_trip_shares(trip_id);
+
+CREATE TABLE IF NOT EXISTS readings (
+  trip_id TEXT NOT NULL,
+  reading_id TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  venue TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL DEFAULT '',
+  markdown TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (trip_id, reading_id)
+);
