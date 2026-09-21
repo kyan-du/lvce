@@ -1290,6 +1290,55 @@ test('mobile itinerary and booking cell editors keep text readable',async()=>{
   await page.close();
 });
 
+test('narrow booking cards stack labels above values without clipping long fields',async()=>{
+  const page=await browser.newPage({viewport:{width:390,height:844}});
+  await page.goto(base);
+  await page.locator('#tabs [data-tab="bookings"]').click();
+  await page.waitForSelector('#tabs [data-tab="bookings"].active');
+  await page.waitForSelector('.booking-grid td[data-label="地址"] .cell-view');
+
+  const metrics=await page.evaluate(()=>{
+    const addressTd=document.querySelector('.booking-grid td[data-label="地址"]');
+    const roomTd=document.querySelector('.booking-grid td[data-label="房型"]');
+    const datesTd=document.querySelector('.booking-grid td[data-label="入住/离店"]');
+    const view=addressTd.querySelector('.cell-view');
+    const copy=addressTd.querySelector('.copy-value');
+    const before=getComputedStyle(addressTd,'::before');
+    const tdStyle=getComputedStyle(addressTd);
+    const viewRect=view.getBoundingClientRect();
+    const copyRect=copy.getBoundingClientRect();
+    const textNode=[...view.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());
+    const range=document.createRange();
+    range.selectNodeContents(textNode);
+    const textRect=range.getBoundingClientRect();
+    const overlaps=(a,b)=>!(a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>=b.bottom);
+    return {
+      paddingLeft:parseFloat(tdStyle.paddingLeft),
+      labelPosition:before.position,
+      addressText:view.innerText.replace(/\s+/g,' ').trim(),
+      roomText:roomTd.querySelector('.cell-view').innerText.trim(),
+      datesText:datesTd.querySelector('.cell-view').innerText.trim(),
+      viewWidth:viewRect.width,
+      tdContentWidth:addressTd.clientWidth-parseFloat(tdStyle.paddingLeft)-parseFloat(tdStyle.paddingRight),
+      viewOverflow:view.scrollWidth>view.clientWidth+1,
+      copyOverlapsText:copy?overlaps(textRect,copyRect):false,
+      copyBelowText:copy?copyRect.top>=textRect.bottom-1:false,
+      labelIsAbsolute:before.position==='absolute'
+    };
+  });
+
+  assert.equal(metrics.labelIsAbsolute,false,'narrow booking labels should not sit in a fixed left column');
+  assert.ok(metrics.paddingLeft<=24,'narrow booking values should not be indented past a squeezed label gutter');
+  assert.match(metrics.addressText,/测试地址 1 号/,'hotel address should remain fully visible');
+  assert.match(metrics.roomText,/标准双床房/,'hotel room type should remain fully visible');
+  assert.match(metrics.datesText,/入住 2026-08-03/,'check-in date should remain fully visible');
+  assert.equal(metrics.viewOverflow,false,'hotel address should wrap inside the card instead of clipping');
+  assert.ok(metrics.viewWidth+1>=metrics.tdContentWidth,'hotel address should use the full card width under its label');
+  assert.equal(metrics.copyOverlapsText,false,'copy button should not cover the address');
+  assert.equal(metrics.copyBelowText,true,'copy button should sit under the address, not beside it');
+  await page.close();
+});
+
 test('booking textarea editors expand rows and cards without internal vertical scrolling',async()=>{
   putBodies=[];
   for(const [name,viewport] of [['desktop',{width:1024,height:800}],['mobile',{width:390,height:844}]]){

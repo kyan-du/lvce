@@ -94,6 +94,36 @@ body.editing .itinerary-date-cell{text-align:left;background:#fff}
   .data-table td::before{width:70px}
 }
 
+/* Narrow booking cards: stack labels above values so addresses and room types are not clipped. */
+@media(max-width:680px){
+  .booking-grid .data-table td,
+  .booking-grid .data-table td:nth-child(3),
+  .booking-grid .data-table td:last-child{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:4px;
+    padding:10px 12px;
+    position:relative;
+  }
+  .booking-grid .data-table td::before{
+    position:static;
+    left:auto;
+    top:auto;
+    width:auto;
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+    line-height:1.3;
+  }
+  .booking-grid .cell-view{min-width:0;max-width:100%}
+  .booking-grid .copy-value{float:none;display:block;width:max-content;margin:6px 0 0}
+  .booking-grid .data-table td.row-action{display:flex!important;padding:9px 11px!important}
+  .booking-grid .data-table td.row-action::before{display:none}
+  .booking-grid .data-table td.empty{display:block;padding:28px 12px;text-align:center}
+  .booking-grid .data-table td.empty::before{display:none}
+}
+
 /* Global account action belongs in the page header. */
 header #logout{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:1px solid #ffffff55;background:#ffffff12;color:#fff;padding:6px 10px;font-size:12px}
 header #logout .logout-icon{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
