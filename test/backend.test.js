@@ -104,7 +104,7 @@ test('middleware keeps login and public share routes open without opening authen
     const response=await middleware({request:new Request('https://example.test'+path),env,next:async()=>{nextCalled=true;return new Response('next')}});
     return {nextCalled,response};
   }
-  for(const path of ['/login','/login.html','/api/login','/api/auth/login','/app.js','/lib/view-url.js','/lib/transport-seats.js','/share/abc','/api/public/trips/'+('a'.repeat(43))]){
+  for(const path of ['/login','/login.html','/api/login','/api/auth/login','/app.js','/lib/view-url.js','/lib/transport-seats.js','/lib/hotel-fields.js','/share/abc','/api/public/trips/'+('a'.repeat(43))]){
     const result=await hit(path);
     assert.equal(result.nextCalled,true,`${path} should pass through middleware`);
     assert.equal(result.response.status,200);
@@ -282,7 +282,14 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.equal(trip.itinerary.some(row=>row[2]==='入住嘉兴'),false);
   assert.equal(JSON.stringify(trip.itinerary).includes('短信未给出')||JSON.stringify(trip.itinerary).includes('不猜测')||JSON.stringify(trip.itinerary).includes('截图未显示'),false);
   assert.equal(trip.hotels.filter(row=>row[1]==='2026-09-24').length,2,'both Jiaxing hotels stay booked for the same night');
-  assert.match(trip.hotels.find(row=>row[0].includes('亚朵'))[5],/与另一家嘉兴酒店同夜/);
+  assert.equal(trip.hotels.find(row=>row[0].includes('亚朵'))[5],'');
+  assert.match(trip.hotels.find(row=>row[0].includes('亚朵'))[8],/与另一家嘉兴酒店同夜/);
+  assert.equal(trip.hotels.find(row=>row[0].includes('桔子水晶'))[3],'0573-82091333');
+  assert.match(trip.hotels.find(row=>row[0].includes('桔子水晶'))[4],/辰溪里7号楼/);
+  assert.match(trip.hotels.find(row=>row[0].includes('亚朵'))[4],/中山东路699号/);
+  assert.match(trip.hotels.find(row=>row[0].includes('汉庭'))[4],/锦带湾广场20号/);
+  assert.match(trip.hotels.find(row=>row[0].includes('汉庭'))[8],/免费取消/);
+  assert.equal(trip.hotels.every(row=>row.length===9),true);
   assert.equal(validateDocument(result.data),null);
   assert.equal(migrateTripDocument(result.data).changed,false);
   assert.deepEqual(buildQiantangTrip().transport,trip.transport);

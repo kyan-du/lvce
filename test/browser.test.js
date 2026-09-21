@@ -952,11 +952,16 @@ test('tickets render, edit, persist, clone, create and keep legacy tour hidden',
   assert.equal(await page.locator('.transport-block td[data-label="座位号"] .cell-view').first().textContent(),'待填写','legacy transport rows should get a seat placeholder');
   assert.equal(await page.locator('.transport-block td[data-label="预订号"] .cell-view').first().textContent(),'BOOKING-20260803-ABC123','full booking number should render without masking');
   assert.equal(await page.getByText('已支付').count(),0,'transport should not render paid status text');
-  assert.deepEqual(await page.locator('.booking-grid .table-block').nth(1).locator('th').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['住宿','入住/离店','电话/邮箱','地址','房型','晚数','总成本']);
-  assert.deepEqual(await page.locator('.booking-grid .table-block').nth(1).locator('tbody tr').first().locator('td').evaluateAll(nodes=>nodes.map((n,index)=>[index,n.dataset.label])),[[0,'住宿'],[1,'入住/离店'],[2,'电话/邮箱'],[3,'地址'],[4,'房型'],[5,'晚数'],[6,'总成本']]);
+  assert.deepEqual(await page.locator('.booking-grid .table-block').nth(1).locator('th').evaluateAll(nodes=>nodes.map(n=>n.textContent)),['住宿','入住/离店','联系方式','房型','备注','晚数','总成本']);
+  assert.deepEqual(await page.locator('.booking-grid .table-block').nth(1).locator('tbody tr').first().locator('td').evaluateAll(nodes=>nodes.map((n,index)=>[index,n.dataset.label])),[[0,'住宿'],[1,'入住/离店'],[2,'联系方式'],[3,'房型'],[4,'备注'],[5,'晚数'],[6,'总成本']]);
   assert.equal(await page.getByText('礼宾部').count(),0,'hotel concierge column should not render');
   assert.equal(await page.locator('.booking-grid .table-block').nth(1).locator('td[data-label="入住/离店"] .cell-view').first().textContent(),'入住 2026-08-03\n离店 待填写','legacy hotel row without checkout should render checkout as pending');
   assert.equal(await page.locator('.booking-grid .table-block').nth(1).locator('td[data-label="房型"] .cell-view').first().textContent(),'标准双床房','legacy room type prefix should be removed');
+  const firstHotel=page.locator('.booking-grid .table-block').nth(1).locator('tbody tr').first();
+  assert.match(await firstHotel.locator('td[data-label="联系方式"] .cell-view').innerText(),/测试地址 1 号/,'address should share the contact column');
+  assert.equal(await firstHotel.locator('td[data-label="联系方式"] [aria-label="复制地址"]').count(),1);
+  assert.equal(await firstHotel.locator('td[data-label="联系方式"] [aria-label="复制电话"]').count(),1);
+  assert.equal(await page.locator('.booking-grid .table-block').nth(1).locator('td[data-label="备注"] .cell-view').first().textContent(),'','hotel notes should start empty when the room type had no extra copy');
   assert.equal(await page.locator('.booking-grid .table-block').nth(1).locator('td[data-label="入住/离店"] .cell-view').nth(1).textContent(),'入住 2026-08-04\n离店 2026-08-06','object hotel rows should render explicit checkin and checkout');
   assert.equal(await page.locator('.booking-grid .table-block').nth(1).locator('td[data-label="晚数"] .cell-view').nth(1).textContent(),'2','object hotel nights should be calculated from checkout minus checkin');
   assert.equal(await page.getByText('旅行团').count(),0,'legacy tour section should be hidden on bookings');
@@ -992,7 +997,7 @@ test('tickets render, edit, persist, clone, create and keep legacy tour hidden',
   await page.getByText('修改已保存').waitFor();
   await page.waitForTimeout(850);
   assert.deepEqual(putBodies.at(-1).trips[0].transport[0],['铁路（3张）','G123','03车 05A','2026-08-03','甲地','09:00','乙地','10:00','BOOKING-20260803-ABC123'],'seat and full booking number should sync through the API document');
-  assert.deepEqual(putBodies.at(-1).trips[0].hotels[0],['酒店','2026-08-03','2026-08-05','138 0000 0000','测试地址 1 号','标准双床房','2','¥1'],'saved hotel should permanently remove concierge, normalize room type and sync explicit checkout in the canonical schema');
+  assert.deepEqual(putBodies.at(-1).trips[0].hotels[0],['酒店','2026-08-03','2026-08-05','138 0000 0000','测试地址 1 号','标准双床房','2','¥1',''],'saved hotel should permanently remove concierge, normalize room type and sync explicit checkout in the canonical schema');
   assert.deepEqual(putBodies.at(-1).trips[0].tickets.at(-1).slice(0,7),ticket,'saved ticket should sync through the API document');
   assert.deepEqual(putBodies.at(-1).trips[0].tour,document.trips[0].tour,'saving tickets should preserve legacy tour data');
 
@@ -1302,19 +1307,20 @@ test('narrow booking cards stack labels above values without clipping long field
   await page.goto(base);
   await page.locator('#tabs [data-tab="bookings"]').click();
   await page.waitForSelector('#tabs [data-tab="bookings"].active');
-  await page.waitForSelector('.booking-grid td[data-label="地址"] .cell-view');
+  await page.waitForSelector('.booking-grid td[data-label="联系方式"] .cell-view');
 
   const metrics=await page.evaluate(()=>{
-    const addressTd=document.querySelector('.booking-grid td[data-label="地址"]');
+    const addressTd=document.querySelector('.booking-grid td[data-label="联系方式"]');
     const roomTd=document.querySelector('.booking-grid td[data-label="房型"]');
     const datesTd=document.querySelector('.booking-grid td[data-label="入住/离店"]');
     const view=addressTd.querySelector('.cell-view');
-    const copy=addressTd.querySelector('.copy-value');
+    const copy=addressTd.querySelector('[aria-label="复制地址"]');
+    const addressValue=addressTd.querySelector('.hotel-contact-value');
     const before=getComputedStyle(addressTd,'::before');
     const tdStyle=getComputedStyle(addressTd);
     const viewRect=view.getBoundingClientRect();
     const copyRect=copy.getBoundingClientRect();
-    const textNode=[...view.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());
+    const textNode=[...addressValue.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());
     const range=document.createRange();
     range.selectNodeContents(textNode);
     const textRect=range.getBoundingClientRect();
