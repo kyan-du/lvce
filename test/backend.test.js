@@ -265,6 +265,12 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.deepEqual(trip.itinerary,QIANTANG_ITINERARY_ROWS);
   assert.equal(trip.categories.length,QIANTANG_PACKING.length);
   assert.ok(trip.categories.some(cat=>cat.items.some(item=>item.name==='望远镜'&&item.qty===2)),'packing should include two telescopes');
+  assert.equal(trip.categories.some(cat=>cat.name==='江塘'),false,'tide-watch kit should not use the opaque 江塘 label');
+  assert.ok(trip.categories.some(cat=>cat.name==='观潮'&&cat.items.some(item=>item.name==='望远镜')),'tide-watch kit should be named 观潮');
+  const digital=trip.categories.find(cat=>cat.name==='数码');
+  assert.ok(digital.items.some(item=>item.name==='充电宝'&&item.qty===2),'power banks belong with phones and chargers');
+  assert.equal(trip.categories.filter(cat=>cat.items.some(item=>item.name==='充电宝')).length,1,'power banks must not appear in two categories');
+  assert.ok(trip.categories.find(cat=>cat.name==='证件行程').items.some(item=>item.name==='12306／酒店订单'));
   assert.equal(trip.tickets.length,0);
   assert.deepEqual(trip.emergency,QIANTANG_EMERGENCY);
   assert.equal(QIANTANG_EMERGENCY.every(row=>row[2]===''),true,'qiantang seed must not repeat the section title as a note');
@@ -293,6 +299,19 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.equal(validateDocument(result.data),null);
   assert.equal(migrateTripDocument(result.data).changed,false);
   assert.deepEqual(buildQiantangTrip().transport,trip.transport);
+});
+
+test('qiantang packing renames 江塘 to 观潮 and moves 充电宝 into 数码',()=>{
+  const original={active:'qiantang',tab:'packing',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[['衣物鞋帽',[['薄外套／防风衣',4]]],['证件行程',[['身份证／儿童证件',4],['12306／酒店订单',1]]],['江塘',[['折叠伞',2],['防水袋',2],['水杯',4],['充电宝',2],['坐垫',2],['望远镜',2]]],['数码',[['手机',4],['充电器',2],['充电线',4]]]].map(([name,items],i)=>({id:'qiantang-c'+i,name,items:items.map(([name,qty],j)=>({id:`qiantang-i${i}-${j}`,name,qty,packed:false}))})),itinerary:[],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
+  const result=migrateTripDocument(original);
+  assert.equal(result.changed,true);
+  const cats=result.data.trips[0].categories;
+  assert.equal(cats.some(cat=>cat.name==='江塘'),false);
+  assert.ok(cats.some(cat=>cat.name==='观潮'&&cat.items.map(item=>item.name).join(',')==='折叠伞,防水袋,水杯,坐垫,望远镜'));
+  const digital=cats.find(cat=>cat.name==='数码');
+  assert.deepEqual(digital.items.map(item=>item.name),['手机','充电宝','充电器','充电线']);
+  assert.equal(cats.filter(cat=>cat.items.some(item=>item.name==='充电宝')).length,1);
+  assert.equal(migrateTripDocument(result.data).changed,false);
 });
 
 test('existing incomplete qiantang trip is filled in place without duplicating or overwriting edits',()=>{
