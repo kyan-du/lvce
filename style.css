@@ -398,7 +398,7 @@ body.public-view .public-error h1{color:var(--ink);letter-spacing:0}
 }
 
 /* Brand mark integration. */
-header{--header-height:145px;height:var(--header-height);display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;align-items:center;overflow:hidden;padding-left:calc(220px + 3vw)}
+header{--header-height:145px;height:var(--header-height);display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;align-items:center;overflow:hidden;padding-left:18px}
 header>div.brand{grid-column:1;justify-self:start;display:grid;min-width:0;max-width:min(640px,100%);justify-items:start;align-items:center;text-align:left;row-gap:6px}
 header .eyebrow{justify-self:start}
 header .brand-line{justify-self:start;display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;justify-content:flex-start;min-width:0;max-width:100%;gap:18px}
