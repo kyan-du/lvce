@@ -261,7 +261,7 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.equal(trip.name,'钱江潮');
   assert.equal(trip.meta,'2026年9月 · 嘉兴／海宁');
   assert.deepEqual(trip.transport,[QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW]);
-  assert.deepEqual(trip.hotels,[QIANTANG_NANHU_HOTEL,QIANTANG_ATOUR_HOTEL,QIANTANG_HANTING_HOTEL]);
+  assert.deepEqual(trip.hotels,[QIANTANG_NANHU_HOTEL,QIANTANG_HANTING_HOTEL]);
   assert.deepEqual(trip.itinerary,QIANTANG_ITINERARY_ROWS);
   assert.equal(trip.categories.length,QIANTANG_PACKING.length);
   assert.ok(trip.categories.some(cat=>cat.items.some(item=>item.name==='望远镜'&&item.qty===2)),'packing should include two telescopes');
@@ -288,12 +288,10 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.ok(trip.itinerary.some(row=>row[2]==='入住嘉兴南湖桔子水晶酒店'));
   assert.equal(trip.itinerary.some(row=>row[2]==='入住嘉兴'),false);
   assert.equal(JSON.stringify(trip.itinerary).includes('短信未给出')||JSON.stringify(trip.itinerary).includes('不猜测')||JSON.stringify(trip.itinerary).includes('截图未显示'),false);
-  assert.equal(trip.hotels.filter(row=>row[1]==='2026-09-24').length,2,'both Jiaxing hotels stay booked for the same night');
-  assert.equal(trip.hotels.find(row=>row[0].includes('亚朵'))[5],'');
-  assert.match(trip.hotels.find(row=>row[0].includes('亚朵'))[8],/与另一家嘉兴酒店同夜/);
+  assert.equal(trip.hotels.filter(row=>row[1]==='2026-09-24').length,1,'24 Sep keeps only 南湖桔子水晶');
+  assert.equal(trip.hotels.some(row=>String(row[0]||'').includes('亚朵')),false);
   assert.equal(trip.hotels.find(row=>row[0].includes('桔子水晶'))[3],'0573-82091333');
   assert.match(trip.hotels.find(row=>row[0].includes('桔子水晶'))[4],/辰溪里7号楼/);
-  assert.match(trip.hotels.find(row=>row[0].includes('亚朵'))[4],/中山东路699号/);
   assert.match(trip.hotels.find(row=>row[0].includes('汉庭'))[4],/锦带湾广场20号/);
   assert.match(trip.hotels.find(row=>row[0].includes('汉庭'))[8],/免费取消/);
   assert.equal(trip.hotels.every(row=>row.length===9),true);
@@ -344,6 +342,10 @@ test('existing incomplete qiantang trip is filled in place without duplicating o
   assert.equal(corrected.changed,true);
   assert.equal(corrected.data.trips[0].hotels.find(row=>row[0]===QIANTANG_NANHU_HOTEL[0])[5],QIANTANG_NANHU_HOTEL[5]);
   assert.equal(migrateTripDocument(corrected.data).changed,false);
+  const dropped={active:'qiantang',tab:'bookings',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:[],transport:[],hotels:[QIANTANG_NANHU_HOTEL.slice(),QIANTANG_HANTING_HOTEL.slice()],tickets:[],emergency:[],tour:[]}]};
+  const kept=migrateTripDocument(dropped);
+  assert.equal(kept.data.trips[0].hotels.some(row=>String(row[0]||'').includes('亚朵')),false);
+  assert.equal(migrateTripDocument(kept.data).changed,false);
 });
 
 test('v1 qiantang itinerary is refreshed, sorted and keeps genuine hand edits',()=>{
