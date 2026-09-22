@@ -264,7 +264,9 @@ async function assertHeaderLogo(page,name){
       logout:document.querySelector('#logout')?.getClientRects().length?rect('#logout'):null
     };
   });
-  const targetLeft=metrics.workspace.left+metrics.workspacePaddingLeft;
+  const targetLeft=metrics.publicView
+    ? metrics.workspace.left+metrics.workspacePaddingLeft
+    : (metrics.aside ? metrics.aside.left+metrics.asidePaddingLeft : metrics.workspace.left+metrics.workspacePaddingLeft);
   assert.equal(metrics.logo.width,metrics.logo.height,`${name} logo should keep a square box without distortion`);
   assert.ok(Math.abs(metrics.brand.left-targetLeft)<=1,`${name} brand left edge does not align with the page content`);
   assert.ok(Math.abs(metrics.brand.left-metrics.brandLine.left)<=1,`${name} brand line is not left-aligned with the brand`);
