@@ -1,8 +1,10 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_AUG5_ROWS,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_CHANGSHA_TRANSFER,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET,ZHANGJIAJIE_C7947_ROW,ZHANGJIAJIE_G206_ROW,ZHANGJIAJIE_G4312_ROW,ZHANGJIAJIE_G1384_NANCHANG_ROW,ZHANGJIAJIE_G1384_HANGZHOU_ROW,ZHANGJIAJIE_G1384_SHANGRAO_ROW,ZHANGJIAJIE_G1382_AUG10_ROW,ZHANGJIAJIE_G1382_AUG11_ROW,ZHANGJIAJIE_G4312_ITINERARY,ZHANGJIAJIE_G1384_SHANGRAO_ITINERARY,ZHANGJIAJIE_G1382_AUG11_ITINERARY,QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW,QIANTANG_ITINERARY_ROWS,QIANTANG_V1_ITINERARY_ROWS,QIANTANG_TRIP_MIGRATION,QIANTANG_READINGS,QIANTANG_PACKING,QIANTANG_EMERGENCY,buildQiantangTrip,normalizeEmergencyContactRow} from '../lib/trips.js';import {publicTripDocument} from '../lib/share.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {pbkdf2Sync} from 'node:crypto';import {readFileSync} from 'node:fs';import {fileURLToPath} from 'node:url';import {dirname,join} from 'node:path';import {makeSession,readSession,verifyPassword,verifySession} from '../lib/auth.js';import {migrateTripDocument,validateDocument,MAX_BYTES,ZHANGJIAJIE_ORANGE_ROW,ZHANGJIAJIE_AUG5_ROWS,ZHANGJIAJIE_MAWANGDUI_ROW,ZHANGJIAJIE_MAWANGDUI_TICKET,ZHANGJIAJIE_JINBIANXI_ROW,ZHANGJIAJIE_JINBIANXI_TRANSFER_ROW,ZHANGJIAJIE_MENGDONG_ROW,ZHANGJIAJIE_JINQI_ROW,ZHANGJIAJIE_TIANMEN_ROW,ZHANGJIAJIE_CHANGSHA_TRANSFER,ZHANGJIAJIE_MENGDONG_TICKET,ZHANGJIAJIE_TIANMEN_TICKET,ZHANGJIAJIE_C7947_ROW,ZHANGJIAJIE_G206_ROW,ZHANGJIAJIE_G4312_ROW,ZHANGJIAJIE_G1384_NANCHANG_ROW,ZHANGJIAJIE_G1384_HANGZHOU_ROW,ZHANGJIAJIE_G1384_SHANGRAO_ROW,ZHANGJIAJIE_G1382_AUG10_ROW,ZHANGJIAJIE_G1382_AUG11_ROW,ZHANGJIAJIE_G4312_ITINERARY,ZHANGJIAJIE_G1384_SHANGRAO_ITINERARY,ZHANGJIAJIE_G1382_AUG11_ITINERARY,QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW,QIANTANG_TRIP_MIGRATION,QIANTANG_READINGS,QIANTANG_PACKING,QIANTANG_EMERGENCY,buildQiantangTrip,normalizeEmergencyContactRow} from '../lib/trips.js';import {publicTripDocument} from '../lib/share.js';import {onRequestGet as readTrips} from '../functions/api/trips.js';import {onRequestPost as createShare,onRequestDelete as revokeShare,onRequestGet as getShareMetadata} from '../functions/api/trips/share.js';import {onRequestGet as readPublicTrip} from '../functions/api/public/trips/[token].js';import {onRequest as middleware} from '../functions/_middleware.js';import {onRequestPost as authLogin} from '../functions/api/auth/login.js';import {onRequestPost as legacyLogin} from '../functions/api/login.js';
 const b=v=>Buffer.from(v).toString('base64url');
 const QIANTANG_NANHU_HOTEL=['嘉兴南湖桔子水晶酒店','2026-09-24','2026-09-25','0573-82091333','嘉兴市南湖区东栅街道辰溪里7号楼','高级双床房 1间；26㎡；2张1.2*2米床；外景窗；早餐赠1份（限金会员入住）','1','在线付 ¥322.32','与另一家嘉兴酒店同夜'];
 const QIANTANG_ATOUR_HOTEL=['嘉兴月河历史街区中山路亚朵酒店','2026-09-24','2026-09-25','','嘉兴市南湖区建设街道中山东路699号','','1','已授权离店后付 ¥347','携程订单 1128150964876747'];
 const QIANTANG_HANTING_HOTEL=['汉庭海宁盐仓酒店','2026-09-25','2026-09-26','','海宁市长安镇盐仓农发区锦带湾广场20号','高级双床房 1间；25-30㎡；2张1.2*2米床；外景窗；早餐赠1份（限金会员入住）','1','在线付 ¥315.92','入住 12:00、离店 14:00；9月25日 20:00前可免费取消'];
+const QIANTANG_ITINERARY_SEED=JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)),'../data/qiantang-itinerary.seed.json'),'utf8'));
+
 test('PBKDF2 password verification',async()=>{const salt=Buffer.from('0123456789abcdef'),hash=`pbkdf2-sha256$100000$${b(salt)}$${b(pbkdf2Sync('hello',salt,100000,32,'sha256'))}`;assert.equal(await verifyPassword('hello',hash),true);assert.equal(await verifyPassword('no',hash),false)});
 test('signed session carries server-verifiable id, expires and rejects tampering',async()=>{const token=await makeSession('long random secret',0,'session-1');assert.equal((await readSession(token,'long random secret',1000)).sid,'session-1');assert.equal(await verifySession(token,'long random secret',1000),true);assert.equal(await verifySession(token+'x','long random secret',1000),false);assert.equal(await verifySession(token,'long random secret',31*864e5),false)});
 test('trip document validation',()=>{const valid={active:'a',tab:'packing',trips:[{id:'a',name:'A',categories:[],itinerary:[],transport:[],hotels:[],tickets:[['景点','2026-08-03','成人票','2','张三','¥20','凭证使用']],emergency:[],tour:[['旧团','保留','不展示']],readings:[{id:'r',title:'旅读',source:'/assets/readings/a.md'}]}]};assert.equal(validateDocument(valid),null);assert.equal(validateDocument({...valid,trips:[{...valid.trips[0],tickets:undefined,readings:undefined}]}),null,'old documents without tickets/readings should remain valid');assert.match(validateDocument({...valid,trips:[{...valid.trips[0],tickets:{}}]}),/tickets/);assert.match(validateDocument({...valid,trips:[{...valid.trips[0],readings:{}}]}),/readings/);assert.match(validateDocument({trips:[]}),/active/);assert.match(validateDocument({...valid,pad:'x'.repeat(MAX_BYTES)}),/字节/)});
@@ -255,7 +257,7 @@ test('zhangjiajie Ctrip details live in five ticket rows and remain idempotent',
   assert.deepEqual(second,first);
 });
 
-test('qiantang trip is inserted and filled from screenshot bookings',()=>{
+test('qiantang trip is inserted with empty itinerary template and filled transport/packing',()=>{
   const original={active:'zhangjiajie',tab:'bookings',trips:[{id:'zhangjiajie',name:'湘行记',categories:[],itinerary:[],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
   const result=migrateTripDocument(original);
   assert.equal(result.changed,true);
@@ -265,7 +267,8 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.equal(trip.meta,'2026年9月 · 嘉兴／海宁');
   assert.deepEqual(trip.transport,[QIANTANG_G1347_ROW,QIANTANG_G7305_ROW,QIANTANG_C406_ROW]);
   assert.deepEqual(trip.hotels,[],'saved stays live in the database, not in the seed');
-  assert.deepEqual(trip.itinerary,QIANTANG_ITINERARY_ROWS);
+  assert.deepEqual(trip.itinerary,[],'new qiantang itinerary is an empty DB-owned template');
+  assert.deepEqual(buildQiantangTrip().itinerary,[]);
   assert.equal(trip.categories.length,QIANTANG_PACKING.length);
   assert.ok(trip.categories.some(cat=>cat.items.some(item=>item.name==='望远镜'&&item.qty===2)),'packing should include two telescopes');
   assert.equal(trip.categories.some(cat=>cat.name==='江塘'||cat.name==='观潮'),false,'kit should be a gear type, not the activity');
@@ -281,21 +284,8 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.deepEqual(trip.readings.map(row=>row.id),QIANTANG_READINGS.map(row=>row.id));
   assert.equal(trip.readings.every(row=>!row.source),true,'qiantang catalog cards must not keep static markdown paths');
   assert.equal(trip.transport.find(row=>row[1]==='G7305')[2].includes('杜明远'),false);
-  assert.ok(JSON.stringify(trip.itinerary).includes('杜明远免票随行'));
   assert.equal(/¥\d/.test(trip.transport.find(row=>row[1]==='G1347')[2].split('\n').find(line=>line.includes('胡丽霞'))||''),false);
   assert.equal(/¥\d/.test(trip.transport.find(row=>row[1]==='C406')[2].split('\n').find(line=>line.includes('胡丽霞'))||''),false);
-  assert.ok(JSON.stringify(trip.itinerary).includes('老盐仓'));
-  assert.ok(JSON.stringify(trip.itinerary).includes('盐官'));
-  assert.ok(JSON.stringify(trip.itinerary).includes('八堡'));
-  assert.ok(trip.itinerary.some(row=>row[2]==='嘉兴博物馆（起点）'));
-  assert.ok(trip.itinerary.some(row=>row[2]==='南湖革命纪念馆'));
-  assert.ok(trip.itinerary.some(row=>row[2]==='天主堂（外观打卡）'));
-  assert.equal(trip.itinerary.some(row=>row[2]==='南湖环湖并坐船登湖心岛／烟雨楼'),false);
-  assert.equal(trip.itinerary.some(row=>row[2]==='子城过渡'),false);
-  assert.equal(trip.itinerary.some(row=>row[2]==='月河历史街区'),false);
-  assert.ok(trip.itinerary.some(row=>row[2]==='入住嘉兴南湖桔子水晶酒店'));
-  assert.equal(trip.itinerary.some(row=>row[2]==='入住嘉兴'),false);
-  assert.equal(JSON.stringify(trip.itinerary).includes('短信未给出')||JSON.stringify(trip.itinerary).includes('不猜测')||JSON.stringify(trip.itinerary).includes('截图未显示'),false);
   assert.equal(trip.hotels.filter(row=>row[1]==='2026-09-24').length,0,'a new trip does not invent hotel bookings');
   assert.equal(trip.hotels.some(row=>String(row[0]||'').includes('亚朵')),false);
   assert.equal(trip.hotels.length,0);
@@ -339,9 +329,10 @@ test('existing incomplete qiantang trip is filled in place without duplicating o
   assert.equal(trip.transport.find(row=>row[1]==='G1347')[2],'用户手改座位');
   assert.deepEqual(trip.transport.find(row=>row[1]==='C406'),QIANTANG_C406_ROW);
   assert.equal(trip.itinerary.find(row=>row[2]==='G1347 上海南→嘉兴南')[1],'手改时间');
+  assert.equal(trip.itinerary.length,1,'migrate must not inject the rest of the seed itinerary');
   assert.deepEqual(result.data.trips.find(t=>t.id==='custom').itinerary,[['keep']]);
   assert.equal(migrateTripDocument(result.data).changed,false);
-  const stale={active:'qiantang',tab:'bookings',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_ITINERARY_ROWS.map(row=>row.slice()),transport:[QIANTANG_G1347_ROW.slice(),QIANTANG_G7305_ROW.slice(),QIANTANG_C406_ROW.slice()],hotels:[[...QIANTANG_NANHU_HOTEL.slice(0,5),'高级双床房 1间；26㎡；2张1.2*2米床；外景窗；早餐赠1份（限金会员入住）；入住 14:00、离店 14:00；9月24日 20:00前可免费取消；与另一家嘉兴酒店同夜',...QIANTANG_NANHU_HOTEL.slice(6)],QIANTANG_ATOUR_HOTEL.slice(),QIANTANG_HANTING_HOTEL.slice()],tickets:[],emergency:[['胡丽霞','186 **** 5057','紧急联系人'],['杜万','185 **** 6420','紧急联系人']],tour:[]}]};
+  const stale={active:'qiantang',tab:'bookings',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_ITINERARY_SEED.map(row=>row.slice()),transport:[QIANTANG_G1347_ROW.slice(),QIANTANG_G7305_ROW.slice(),QIANTANG_C406_ROW.slice()],hotels:[[...QIANTANG_NANHU_HOTEL.slice(0,5),'高级双床房 1间；26㎡；2张1.2*2米床；外景窗；早餐赠1份（限金会员入住）；入住 14:00、离店 14:00；9月24日 20:00前可免费取消；与另一家嘉兴酒店同夜',...QIANTANG_NANHU_HOTEL.slice(6)],QIANTANG_ATOUR_HOTEL.slice(),QIANTANG_HANTING_HOTEL.slice()],tickets:[],emergency:[['胡丽霞','186 **** 5057','紧急联系人'],['杜万','185 **** 6420','紧急联系人']],tour:[]}]};
   const corrected=migrateTripDocument(stale);
   assert.equal(corrected.changed,true);
   assert.equal(corrected.data.trips[0].hotels.find(row=>row[0]===QIANTANG_NANHU_HOTEL[0])[5],QIANTANG_NANHU_HOTEL[5]);
@@ -355,26 +346,46 @@ test('existing incomplete qiantang trip is filled in place without duplicating o
   assert.deepEqual(orangeOnly.data.trips[0].hotels.map(row=>row[0]),[QIANTANG_NANHU_HOTEL[0]],'a hotel removed in the database stays removed');
 });
 
-test('v1 qiantang itinerary is refreshed, sorted and keeps genuine hand edits',()=>{
-  const original={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_V1_ITINERARY_ROWS.map(row=>row.slice()),transport:[QIANTANG_G1347_ROW.slice(),QIANTANG_G7305_ROW.slice(),QIANTANG_C406_ROW.slice()],hotels:[QIANTANG_NANHU_HOTEL.slice(),QIANTANG_ATOUR_HOTEL.slice(),QIANTANG_HANTING_HOTEL.slice()],tickets:[],emergency:[['胡丽霞','186 **** 5057','紧急联系人'],['杜万','185 **** 6420','紧急联系人']],tour:[],readings:[{id:'yuelu-mountain',title:'岳麓山',source:'/assets/readings/yuelu-mountain.md'},{id:'keep-custom',title:'自订旅读',source:'/assets/readings/custom.md'}]}]};
+test('qiantang migrate drops known stale itinerary titles but does not seed content',()=>{
+  const original={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:[
+    ['2026-09-24','17:23-17:53','G1347 上海南→嘉兴南','上海南／嘉兴南','胡丽霞','铁路'],
+    ['2026-09-24','','入住嘉兴','嘉兴','胡丽霞','旧泛化入住行'],
+    ['2026-09-25','10:00','南湖环湖并坐船登湖心岛／烟雨楼','南湖','胡丽霞','旧合并行'],
+    ['2026-09-25','11:00','子城过渡','子城','胡丽霞','旧过渡行'],
+    ['2026-09-25','12:00','月河历史街区','月河','胡丽霞','旧月河行'],
+    ['2026-09-25','18:02-18:17','G7305 嘉兴南→海宁西','嘉兴南／海宁西','胡丽霞','铁路']
+  ],transport:[],hotels:[],tickets:[],emergency:[],tour:[],readings:[{id:'yuelu-mountain',title:'岳麓山',source:'/assets/readings/yuelu-mountain.md'},{id:'keep-custom',title:'自订旅读',source:'/assets/readings/custom.md'}]}]};
   const result=migrateTripDocument(original);
   assert.equal(result.changed,true);
   const trip=result.data.trips[0];
-  assert.deepEqual(trip.itinerary.map(row=>row[2]),QIANTANG_ITINERARY_ROWS.map(row=>row[2]));
-  assert.deepEqual(trip.itinerary.filter(row=>row[0]==='2026-09-25').map(row=>row[2]),['嘉兴博物馆（起点）','南湖革命纪念馆','午饭：真真老老·会景园店','会景园码头坐船→湖心岛','子城遗址公园','天主堂（外观打卡）','G7305 嘉兴南→海宁西','入住汉庭海宁盐仓酒店']);
-  assert.deepEqual(trip.itinerary.filter(row=>row[0]==='2026-09-26').map(row=>row[2]),['老盐仓观潮','前往海宁站（硖石）','C406 海宁→上海南']);
-  const g7305=trip.itinerary.find(row=>row[2]==='G7305 嘉兴南→海宁西');
-  assert.match(g7305[5],/杜明远免票随行/);
-  assert.match(g7305[5],/海宁西在许村/);
-  assert.match(trip.itinerary.find(row=>row[2]==='入住汉庭海宁盐仓酒店')[3],/老盐仓/);
   assert.equal(trip.itinerary.some(row=>row[2]==='入住嘉兴'),false);
+  assert.equal(trip.itinerary.some(row=>row[2]==='南湖环湖并坐船登湖心岛／烟雨楼'),false);
+  assert.equal(trip.itinerary.some(row=>row[2]==='子城过渡'),false);
+  assert.equal(trip.itinerary.some(row=>row[2]==='月河历史街区'),false);
+  assert.deepEqual(trip.itinerary.map(row=>row[2]),['G1347 上海南→嘉兴南','G7305 嘉兴南→海宁西']);
+  assert.equal(trip.itinerary.length,2,'stale titles removed; no seed rows injected');
   assert.deepEqual(trip.readings.map(row=>row.id),['keep-custom',...QIANTANG_READINGS.map(row=>row.id)]);
   assert.equal(trip.readings.every(row=>!row.source),true,'GET migration must drop leftover static source paths');
-  const edited={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:QIANTANG_V1_ITINERARY_ROWS.map(row=>row[2]==='G7305 嘉兴南→海宁西'?['2026-09-25','手改发车','G7305 嘉兴南→海宁西','嘉兴南／海宁西','胡丽霞','手改备注']:row.slice()),transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
-  const kept=migrateTripDocument(edited).data.trips[0].itinerary.find(row=>row[2]==='G7305 嘉兴南→海宁西');
-  assert.equal(kept[1],'手改发车');
-  assert.equal(kept[5],'手改备注');
   assert.equal(migrateTripDocument(result.data).changed,false);
+});
+
+test('qiantang migrate keeps hand-edited itinerary time including 约 prefix',()=>{
+  const original={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:[['2026-09-25','约09:00-10:30','嘉兴博物馆（起点）','嘉兴博物馆','胡丽霞','手改时段']],transport:[],hotels:[],tickets:[],emergency:[],tour:[]}]};
+  const result=migrateTripDocument(original);
+  const row=result.data.trips[0].itinerary.find(r=>r[2]==='嘉兴博物馆（起点）');
+  assert.ok(row);
+  assert.equal(row[1],'约09:00-10:30','migrate must not overwrite hand-edited time');
+  assert.equal(row[5],'手改时段');
+  assert.equal(result.data.trips[0].itinerary.length,1,'must not add the rest of the seed itinerary');
+  assert.equal(migrateTripDocument(result.data).data.trips[0].itinerary.find(r=>r[2]==='嘉兴博物馆（起点）')[1],'约09:00-10:30');
+});
+
+test('qiantang migrate does not inject seed rows into an empty itinerary',()=>{
+  const original={active:'qiantang',tab:'itinerary',trips:[{id:'qiantang',name:'钱江潮',meta:'2026年9月 · 嘉兴／海宁',categories:[],itinerary:[],transport:[QIANTANG_G1347_ROW.slice()],hotels:[],tickets:[],emergency:[],tour:[]}]};
+  const result=migrateTripDocument(original);
+  assert.deepEqual(result.data.trips[0].itinerary,[],'empty itinerary stays empty');
+  assert.ok(QIANTANG_ITINERARY_SEED.length>0,'seed file exists for one-time import only');
+  assert.equal(result.data.trips[0].itinerary.length===0||!result.data.trips[0].itinerary.some(row=>QIANTANG_ITINERARY_SEED.some(seed=>seed[2]===row[2]&&seed[0]===row[0])),true);
 });
 
 test('emergency contact normalization keeps full numbers, strips default notes, and cannot recover masks',()=>{
