@@ -287,7 +287,12 @@ test('qiantang trip is inserted and filled from screenshot bookings',()=>{
   assert.ok(JSON.stringify(trip.itinerary).includes('老盐仓'));
   assert.ok(JSON.stringify(trip.itinerary).includes('盐官'));
   assert.ok(JSON.stringify(trip.itinerary).includes('八堡'));
-  assert.ok(trip.itinerary.some(row=>row[2]==='南湖环湖并坐船登湖心岛／烟雨楼'));
+  assert.ok(trip.itinerary.some(row=>row[2]==='嘉兴博物馆（起点）'));
+  assert.ok(trip.itinerary.some(row=>row[2]==='南湖革命纪念馆'));
+  assert.ok(trip.itinerary.some(row=>row[2]==='天主堂（外观打卡）'));
+  assert.equal(trip.itinerary.some(row=>row[2]==='南湖环湖并坐船登湖心岛／烟雨楼'),false);
+  assert.equal(trip.itinerary.some(row=>row[2]==='子城过渡'),false);
+  assert.equal(trip.itinerary.some(row=>row[2]==='月河历史街区'),false);
   assert.ok(trip.itinerary.some(row=>row[2]==='入住嘉兴南湖桔子水晶酒店'));
   assert.equal(trip.itinerary.some(row=>row[2]==='入住嘉兴'),false);
   assert.equal(JSON.stringify(trip.itinerary).includes('短信未给出')||JSON.stringify(trip.itinerary).includes('不猜测')||JSON.stringify(trip.itinerary).includes('截图未显示'),false);
@@ -356,7 +361,7 @@ test('v1 qiantang itinerary is refreshed, sorted and keeps genuine hand edits',(
   assert.equal(result.changed,true);
   const trip=result.data.trips[0];
   assert.deepEqual(trip.itinerary.map(row=>row[2]),QIANTANG_ITINERARY_ROWS.map(row=>row[2]));
-  assert.deepEqual(trip.itinerary.filter(row=>row[0]==='2026-09-25').map(row=>row[2]),['南湖环湖并坐船登湖心岛／烟雨楼','子城过渡','月河历史街区','G7305 嘉兴南→海宁西','入住汉庭海宁盐仓酒店']);
+  assert.deepEqual(trip.itinerary.filter(row=>row[0]==='2026-09-25').map(row=>row[2]),['嘉兴博物馆（起点）','南湖革命纪念馆','午饭：真真老老·会景园店','会景园码头坐船→湖心岛','子城遗址公园','天主堂（外观打卡）','G7305 嘉兴南→海宁西','入住汉庭海宁盐仓酒店']);
   assert.deepEqual(trip.itinerary.filter(row=>row[0]==='2026-09-26').map(row=>row[2]),['老盐仓观潮','前往海宁站（硖石）','C406 海宁→上海南']);
   const g7305=trip.itinerary.find(row=>row[2]==='G7305 嘉兴南→海宁西');
   assert.match(g7305[5],/杜明远免票随行/);
